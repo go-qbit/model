@@ -9,6 +9,7 @@ import (
 type IModel interface {
 	GetId() string
 	GetPKFieldsNames() []string
+	GetFieldsNames() []string
 	GetFieldDefinition(string) IFieldDefinition
 	//AddField(IFieldDefinition)
 	AddRelation(Relation, []IFieldDefinition)

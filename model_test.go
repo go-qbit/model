@@ -87,6 +87,18 @@ func (s *ModelTestSuite) TestModel_CheckRegisteredModels() {
 	)
 }
 
+func (s *ModelTestSuite) TestModel_GetFieldsNames() {
+	s.Equal(
+		[]string{"id", "name", "lastname", "fullname"},
+		s.user.GetFieldsNames(),
+	)
+
+	s.Equal(
+		[]string{"id", "text", "fk__user__id"},
+		s.message.GetFieldsNames(),
+	)
+}
+
 func (s *ModelTestSuite) TestModel_GetAll() {
 	data, err := s.user.GetAll(
 		context.Background(),

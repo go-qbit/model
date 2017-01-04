@@ -16,6 +16,7 @@ import (
 type BaseModel struct {
 	id            string
 	fields        []IFieldDefinition
+	fieldsMtx     sync.RWMutex
 	nameToField   map[string]IFieldDefinition
 	pkFieldsNames []string
 	extModels     map[string]Relation
@@ -48,15 +49,10 @@ func (m *BaseModel) GetId() string {
 	return m.id
 }
 
-func (m *BaseModel) GetPKFieldsNames() []string {
-	return m.pkFieldsNames
-}
+func (m *BaseModel) GetFieldsNames() []string {
+	m.fieldsMtx.RLock()
+	defer m.fieldsMtx.RUnlock()
 
-func (m *BaseModel) GetFieldDefinition(name string) IFieldDefinition {
-	return m.nameToField[name]
-}
-
-func (m *BaseModel) GetFieldsNames(name string) []string {
 	res := make([]string, len(m.fields))
 
 	for i, field := range m.fields {
@@ -66,9 +62,27 @@ func (m *BaseModel) GetFieldsNames(name string) []string {
 	return res
 }
 
+func (m *BaseModel) GetPKFieldsNames() []string {
+	return m.pkFieldsNames
+}
+
+func (m *BaseModel) GetFieldDefinition(name string) IFieldDefinition {
+	m.fieldsMtx.RLock()
+	defer m.fieldsMtx.RUnlock()
+
+	return m.nameToField[name]
+}
+
 func (m *BaseModel) AddField(field IFieldDefinition) {
-	m.fields = append(m.fields, field)
+	m.fieldsMtx.Lock()
+	defer m.fieldsMtx.Unlock()
+
+	if _, exists := m.nameToField[field.GetId()]; exists {
+		panic(fmt.Sprintf("The model '%s' already has a field '%s'", m.GetId(), field.GetId()))
+	}
+
 	m.nameToField[field.GetId()] = field
+	m.fields = append(m.fields, field)
 }
 
 func (m *BaseModel) GetAllFieldDependencies(fieldName string) ([]string, error) {
