@@ -121,6 +121,18 @@ func (m *BaseModel) AddRelation(relation Relation, newFields []IFieldDefinition)
 	m.extModels[relation.ExtModel.GetId()] = relation
 }
 
+func (m *BaseModel) GetRelations() []string {
+	m.extModelsMtx.RLock()
+	defer m.extModelsMtx.RUnlock()
+
+	res := make([]string, 0, len(m.extModels))
+	for name, _ := range m.extModels {
+		res = append(res, name)
+	}
+
+	return res
+}
+
 func (m *BaseModel) GetRelation(modelName string) *Relation {
 	m.extModelsMtx.RLock()
 	defer m.extModelsMtx.RUnlock()

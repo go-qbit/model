@@ -2,6 +2,7 @@ package model_test
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/go-qbit/model"
@@ -96,6 +97,16 @@ func (s *ModelTestSuite) TestModel_GetFieldsNames() {
 	s.Equal(
 		[]string{"id", "text", "fk__user__id"},
 		s.message.GetFieldsNames(),
+	)
+}
+
+func (s *ModelTestSuite) TestModel_GetRelations() {
+	relations := s.user.GetRelations()
+	sort.Strings(relations)
+
+	s.Equal(
+		[]string{"address", "message", "phone"},
+		relations,
 	)
 }
 
