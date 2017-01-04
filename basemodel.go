@@ -234,7 +234,9 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, options Ge
 
 	needLocalFieldsNamesArr := make([]string, 0, len(needLocalFields))
 	for fieldName, _ := range needLocalFields {
-		needLocalFieldsNamesArr = append(needLocalFieldsNamesArr, fieldName)
+		if !m.nameToField[fieldName].IsDerivable() {
+			needLocalFieldsNamesArr = append(needLocalFieldsNamesArr, fieldName)
+		}
 	}
 	values, err := m.storage.Query(ctx, m, needLocalFieldsNamesArr, QueryOptions{
 		Filter: options.Filter,
