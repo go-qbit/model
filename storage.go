@@ -14,12 +14,7 @@ type IStorage interface {
 
 type QueryOptions struct {
 	Filter  expr.IExpression
+	OrderBy []Order
 	Limit   uint64
 	Offset  uint64
-	OrderBy []Order
-}
-
-type Order struct {
-	FieldName string
-	Desc      bool
 }

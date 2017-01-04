@@ -19,7 +19,13 @@ type IModel interface {
 }
 
 type GetAllOptions struct {
-	Filter expr.IExpression
-	Limit  uint64
-	Offset uint64
+	Filter  expr.IExpression
+	OrderBy []Order
+	Limit   uint64
+	Offset  uint64
+}
+
+type Order struct {
+	FieldName string
+	Desc      bool
 }

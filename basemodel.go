@@ -240,6 +240,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, options Ge
 	}
 	values, err := m.storage.Query(ctx, m, needLocalFieldsNamesArr, QueryOptions{
 		Filter: options.Filter,
+		OrderBy: options.OrderBy,
 		Limit:  options.Limit,
 		Offset: options.Offset,
 	})
