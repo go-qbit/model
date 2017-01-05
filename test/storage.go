@@ -10,6 +10,8 @@ import (
 	"sort"
 )
 
+var exprProcessor = &ExprProcessor{}
+
 type Storage struct {
 	data      map[string][]DataRow
 	mtx       sync.RWMutex
@@ -87,7 +89,7 @@ func (s *Storage) Query(ctx context.Context, m model.IModel, fieldsNames []strin
 		resRow := make(map[string]interface{})
 
 		if options.Filter != nil {
-			filterRes, err := options.Filter.Eval(row)
+			filterRes, err := options.Filter.GetProcessor(exprProcessor).(EvalFunc)(row)
 			if err != nil {
 				return nil, err
 			}
