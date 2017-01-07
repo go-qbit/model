@@ -55,30 +55,30 @@ func AddOneToOneRelation(model1, model2 IModel, required bool) {
 	}, nil)
 }
 
-func AddOneToManyRelation(model1, model2 IModel) {
-	fkFieldsNames := make([]string, len(model1.GetPKFieldsNames()))
+func AddManyToOneRelation(model1, model2 IModel) {
+	fkFieldsNames := make([]string, len(model2.GetPKFieldsNames()))
 	fkFields := make([]IFieldDefinition, len(fkFieldsNames))
-	for i, pkFieldName := range model1.GetPKFieldsNames() {
-		fkName := "fk__" + model1.GetId() + "__" + pkFieldName
+	for i, pkFieldName := range model2.GetPKFieldsNames() {
+		fkName := "fk__" + model2.GetId() + "__" + pkFieldName
 		fkFieldsNames[i] = fkName
-		fkFields[i] = model1.GetFieldDefinition(pkFieldName).CloneForFK(fkName, "FK field", true)
+		fkFields[i] = model2.GetFieldDefinition(pkFieldName).CloneForFK(fkName, "FK field", true)
 	}
 
 	model1.AddRelation(Relation{
 		ExtModel:         model2,
-		RelationType:     RELATION_ONE_TO_MANY,
-		LocalFieldsNames: model1.GetPKFieldsNames(),
-		FkFieldsNames:    fkFieldsNames,
-	}, nil)
-
-	model2.AddRelation(Relation{
-		ExtModel:         model1,
 		RelationType:     RELATION_MANY_TO_ONE,
 		LocalFieldsNames: fkFieldsNames,
 		FkFieldsNames:    model1.GetPKFieldsNames(),
+	}, fkFields)
+
+	model2.AddRelation(Relation{
+		ExtModel:         model1,
+		RelationType:     RELATION_ONE_TO_MANY,
+		LocalFieldsNames: model1.GetPKFieldsNames(),
+		FkFieldsNames:    fkFieldsNames,
 		IsRequired:       true,
 		IsBack:           true,
-	}, fkFields)
+	}, nil)
 }
 
 func AddManyToManyRelation(model1, model2 IModel, storage IStorage) {

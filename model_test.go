@@ -33,8 +33,8 @@ func (s *ModelTestSuite) SetupTest() {
 	s.message = test.NewMessage(s.storage)
 	s.address = test.NewAddress(s.storage)
 
-	model.AddOneToOneRelation(s.user, s.phone, false)
-	model.AddOneToManyRelation(s.user, s.message)
+	model.AddOneToOneRelation(s.phone, s.user, false)
+	model.AddManyToOneRelation(s.message, s.user)
 	model.AddManyToManyRelation(s.user, s.address, s.storage)
 
 	_, err := s.user.AddMulti(context.Background(), []map[string]interface{}{
