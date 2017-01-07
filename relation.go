@@ -99,7 +99,7 @@ func AddManyToManyRelation(model1, model2 IModel, storage IStorage) {
 		junctionFields = append(junctionFields, model2.GetFieldDefinition(pkFieldName).CloneForFK(fk2Fields[i], "FK field", true))
 	}
 
-	junctionModel := NewBaseModel("_junction__"+model1.GetId()+"__"+model2.GetId(), junctionFields, junctionPkFields, storage)
+	junctionModel := storage.NewModel("_junction__"+model1.GetId()+"__"+model2.GetId(), junctionFields, junctionPkFields)
 
 	model1.AddRelation(Relation{
 		ExtModel:                 model2,
@@ -120,5 +120,19 @@ func AddManyToManyRelation(model1, model2 IModel, storage IStorage) {
 		JunctionLocalFieldsNames: fk2Fields,
 		JunctionFkFieldsNames:    fk1Fields,
 		IsBack:                   true,
+	}, nil)
+
+	junctionModel.AddRelation(Relation{
+		ExtModel:         model1,
+		RelationType:     RELATION_MANY_TO_ONE,
+		LocalFieldsNames: fk1Fields,
+		FkFieldsNames:    model1.GetPKFieldsNames(),
+	}, nil)
+
+	junctionModel.AddRelation(Relation{
+		ExtModel:         model2,
+		RelationType:     RELATION_MANY_TO_ONE,
+		LocalFieldsNames: fk2Fields,
+		FkFieldsNames:    model2.GetPKFieldsNames(),
 	}, nil)
 }

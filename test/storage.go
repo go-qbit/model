@@ -3,11 +3,11 @@ package test
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/go-qbit/model"
 	"github.com/go-qbit/qerror"
-	"sort"
 )
 
 var exprProcessor = &ExprProcessor{}
@@ -32,6 +32,10 @@ func NewStorage() *Storage {
 	}
 
 	return s
+}
+
+func (s *Storage) NewModel(id string, fields []model.IFieldDefinition, pk []string) model.IModel {
+	return model.NewBaseModel(id, fields, pk, s)
 }
 
 func (s *Storage) RegisterModel(m model.IModel) error {
