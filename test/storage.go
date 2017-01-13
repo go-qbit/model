@@ -65,18 +65,23 @@ func (s *Storage) GetModelsNames() []string {
 	return res
 }
 
-func (s *Storage) Add(ctx context.Context, m model.IModel, data []map[string]interface{}) ([]interface{}, error) {
+func (s *Storage) Add(ctx context.Context, m model.IModel, fields []string, data [][]interface{}) ([]interface{}, error) {
 	pKeys := make([]interface{}, len(data))
 
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 
 	for _, row := range data {
-		s.data[m.GetId()] = append(s.data[m.GetId()], row)
+		dataRow := make(map[string]interface{})
+		for i, field := range fields {
+			dataRow[field] = row[i]
+		}
+
+		s.data[m.GetId()] = append(s.data[m.GetId()], dataRow)
 
 		pk := make(map[string]interface{})
 		for _, pkName := range m.GetPKFieldsNames() {
-			pk[pkName] = row[pkName]
+			pk[pkName] = dataRow[pkName]
 		}
 	}
 

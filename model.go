@@ -15,7 +15,7 @@ type IModel interface {
 	AddRelation(Relation, []IFieldDefinition)
 	GetRelations() []string
 	GetRelation(string) *Relation
-	AddMulti(context.Context, []map[string]interface{}) ([]interface{}, error)
+	AddMulti(context.Context, []string, [][]interface{}) ([]interface{}, error)
 	GetAll(context.Context, []string, GetAllOptions) ([]map[string]interface{}, error)
 	FieldsToString([]string, map[string]interface{}) string
 }

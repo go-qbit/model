@@ -37,47 +37,61 @@ func (s *ModelTestSuite) SetupTest() {
 	model.AddManyToOneRelation(s.message, s.user)
 	model.AddManyToManyRelation(s.user, s.address, s.storage)
 
-	_, err := s.user.AddMulti(context.Background(), []map[string]interface{}{
-		{"id": 1, "name": "Ivan", "lastname": "Sidorov"},
-		{"id": 2, "name": "Petr", "lastname": "Ivanov"},
-		{"id": 3, "name": "James", "lastname": "Bond"},
-		{"id": 4, "name": "John", "lastname": "Connor"},
-		{"id": 5, "name": "Sara", "lastname": "Connor"},
-	})
+	_, err := s.user.AddMulti(context.Background(),
+		[]string{"id", "name", "lastname"},
+		[][]interface{}{
+			{1, "Ivan", "Sidorov"},
+			{2, "Petr", "Ivanov"},
+			{3, "James", "Bond"},
+			{4, "John", "Connor"},
+			{5, "Sara", "Connor"},
+		},
+	)
 	s.NoError(err)
 
-	_, err = s.phone.AddMulti(context.Background(), []map[string]interface{}{
-		{"id": 1, "country_code": 1, "code": 111, "number": 1111111},
-		{"id": 3, "country_code": 3, "code": 333, "number": 3333333},
-	})
+	_, err = s.phone.AddMulti(context.Background(),
+		[]string{"id", "country_code", "code", "number"},
+		[][]interface{}{
+			{1, 1, 111, 1111111},
+			{3, 3, 333, 3333333},
+		},
+	)
 	s.NoError(err)
 
-	_, err = s.message.AddMulti(context.Background(), []map[string]interface{}{
-		{"id": 10, "text": "Message 1", "fk__user__id": 1},
-		{"id": 20, "text": "Message 2", "fk__user__id": 1},
-		{"id": 30, "text": "Message 3", "fk__user__id": 1},
-		{"id": 40, "text": "Message 4", "fk__user__id": 2},
-	})
+	_, err = s.message.AddMulti(context.Background(),
+		[]string{"id", "text", "fk__user__id"},
+		[][]interface{}{
+			{10, "Message 1", 1},
+			{20, "Message 2", 1},
+			{30, "Message 3", 1},
+			{40, "Message 4", 2},
+		},
+	)
 	s.NoError(err)
 
-	_, err = s.address.AddMulti(context.Background(), []map[string]interface{}{
-		{"id": 100, "country": "USA", "city": "Arlington", "address": "1022 Bridges Dr"},
-		{"id": 200, "country": "USA", "city": "Fort Worth", "address": "7105 Plover Circle"},
-		{"id": 300, "country": "USA", "city": "Crowley", "address": "524 Pecan Street"},
-		{"id": 400, "country": "USA", "city": "Arlington", "address": "1022 Bridges Dr"},
-		{"id": 500, "country": "USA", "city": "Louisville", "address": "1246 Everett Avenue"},
-	})
+	_, err = s.address.AddMulti(context.Background(),
+		[]string{"id", "country", "city", "address"},
+		[][]interface{}{
+			{100, "USA", "Arlington", "1022 Bridges Dr"},
+			{200, "USA", "Fort Worth", "7105 Plover Circle"},
+			{300, "USA", "Crowley", "524 Pecan Street"},
+			{400, "USA", "Arlington", "1022 Bridges Dr"},
+			{500, "USA", "Louisville", "1246 Everett Avenue"},
+		},
+	)
 	s.NoError(err)
 
-	_, err = s.user.GetRelation("address").JunctionModel.AddMulti(context.Background(), []map[string]interface{}{
-		{"fk__user__id": 1, "fk__address__id": 100},
-		{"fk__user__id": 1, "fk__address__id": 200},
-		{"fk__user__id": 2, "fk__address__id": 200},
-		{"fk__user__id": 2, "fk__address__id": 300},
-		{"fk__user__id": 3, "fk__address__id": 300},
-		{"fk__user__id": 4, "fk__address__id": 400},
-		{"fk__user__id": 5, "fk__address__id": 500},
-	})
+	_, err = s.user.GetRelation("address").JunctionModel.AddMulti(context.Background(),
+		[]string{"fk__user__id", "fk__address__id"},
+		[][]interface{}{
+			{1, 100},
+			{1, 200},
+			{2, 200},
+			{2, 300},
+			{3, 300},
+			{4, 400},
+			{5, 500},
+		})
 	s.NoError(err)
 }
 

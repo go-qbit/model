@@ -145,37 +145,52 @@ func (m *BaseModel) GetRelation(modelName string) *Relation {
 	}
 }
 
-func (m *BaseModel) AddMulti(ctx context.Context, data []map[string]interface{}) ([]interface{}, error) {
+func (m *BaseModel) AddMulti(ctx context.Context, fieldsNames []string, data [][]interface{}) ([]interface{}, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
 
-	for _, row := range data {
-		// Check that all required fields are exists
-		for fieldName, field := range m.nameToField {
-			if field.IsRequired() {
-				if _, exists := row[fieldName]; !exists {
-					return nil, qerror.New("Missed required field '%s' in model '%s'", fieldName, m.id)
-				}
-			}
+	fieldsMap := make(map[string]struct{})
+	fields := make([]IFieldDefinition, len(fieldsNames))
+	for i, fieldName := range fieldsNames {
+		fields[i] = m.GetFieldDefinition(fieldName)
+		if fields[i] == nil {
+			return nil, qerror.New("Unknown field '%s' in model '%s'", fieldName, m.id)
 		}
 
-		// Check fields
-		for fieldName, value := range row {
-			if field, exists := m.nameToField[fieldName]; exists {
-				if field.IsDerivable() {
-					return nil, qerror.New("The field '%s' is derivable in model %s, it cannot be added", fieldName, m.id)
-				}
-				if err := field.Check(value); err != nil {
-					return nil, err
-				}
-			} else {
+		if fields[i].IsDerivable() {
+			return nil, qerror.New("The field '%s' is derivable in model %s, it cannot be added", fieldName, m.id)
+		}
+
+		fieldsMap[fieldName] = struct{}{}
+	}
+
+	for _, fieldName := range m.GetFieldsNames() {
+		field := m.GetFieldDefinition(fieldName)
+		if field.IsRequired() {
+			if _, exists := fieldsMap[fieldName]; !exists {
 				return nil, qerror.New("Missed required field '%s' in model '%s'", fieldName, m.id)
 			}
 		}
 	}
 
-	return m.storage.Add(ctx, m, data)
+	for _, row := range data {
+		if len(row) != len(fields) {
+			return nil, qerror.New("Invalid columns number")
+		}
+
+		for i, field := range fields {
+			if field.IsRequired() && row[i] == nil {
+				return nil, qerror.New("Missed required field '%s' value in model '%s'", field.GetId(), m.id)
+			}
+
+			if err := field.Check(row[i]); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return m.storage.Add(ctx, m, fieldsNames, data)
 }
 
 func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, options GetAllOptions) ([]map[string]interface{}, error) {
