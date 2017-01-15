@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -193,6 +194,32 @@ func (m *BaseModel) AddMulti(ctx context.Context, fieldsNames []string, data [][
 	return m.storage.Add(ctx, m, fieldsNames, data)
 }
 
+func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}) ([]interface{}, error) {
+	rt := reflect.TypeOf(data)
+
+	if rt.Kind() != reflect.Slice || rt.Elem().Kind() != reflect.Struct {
+		return nil, qerror.New("Invalid type '%s', must to slice of struct", rt.String())
+	}
+
+	fields := make([]string, rt.Elem().NumField())
+	for i := 0; i < rt.Elem().NumField(); i++ {
+		fields[i] = m.structFieldToFieldName(rt.Elem().Field(i))
+	}
+
+	rData := reflect.ValueOf(data)
+	flatData := make([][]interface{}, rData.Len())
+
+	for i := 0; i < rData.Len(); i++ {
+		flatRow := make([]interface{}, len(fields))
+		for j := 0; j < len(fields); j++ {
+			flatRow[j] = rData.Index(i).Field(j).Interface()
+		}
+		flatData[i] = flatRow
+	}
+
+	return m.AddMulti(ctx, fields, flatData)
+}
+
 func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, options GetAllOptions) ([]map[string]interface{}, error) {
 	requestedLocalFields := make(map[string]struct{})
 	requestedExtFields := make(map[string]map[string]struct{})
@@ -207,9 +234,10 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, options Ge
 		// Local fields
 		if len(splittedFieldName) == 1 {
 			requestedLocalFields[fieldName] = struct{}{}
+
 			field := m.GetFieldDefinition(fieldName)
 			if field == nil {
-				return nil, qerror.New("Unknown field '%s' in model '%s'", field, m.id)
+				return nil, qerror.New("Unknown field '%s' in model '%s'", fieldName, m.id)
 			}
 
 			if field.IsDerivable() {
@@ -544,7 +572,10 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 func (m *BaseModel) structFieldToFieldName(field reflect.StructField) string {
 	fieldName, ok := field.Tag.Lookup("field")
 	if !ok {
-		fieldName = field.Name
+		fieldName = field.Name[0:1] + regexp.MustCompile("[A-Z]").ReplaceAllStringFunc(field.Name[1:], func(v string) string {
+			return "_" + v
+		})
+		fieldName = strings.ToLower(fieldName)
 	}
 
 	return fieldName

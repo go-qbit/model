@@ -37,9 +37,12 @@ func (s *ModelTestSuite) SetupTest() {
 	model.AddManyToOneRelation(s.message, s.user)
 	model.AddManyToManyRelation(s.user, s.address, s.storage)
 
-	_, err := s.user.AddMulti(context.Background(),
-		[]string{"id", "name", "lastname"},
-		[][]interface{}{
+	_, err := s.user.AddFromStructs(context.Background(),
+		[]struct {
+			Id       int
+			Name     string
+			Lastname string
+		}{
 			{1, "Ivan", "Sidorov"},
 			{2, "Petr", "Ivanov"},
 			{3, "James", "Bond"},
@@ -47,6 +50,7 @@ func (s *ModelTestSuite) SetupTest() {
 			{5, "Sara", "Connor"},
 		},
 	)
+
 	s.NoError(err)
 
 	_, err = s.phone.AddMulti(context.Background(),
@@ -185,16 +189,16 @@ func (s *ModelTestSuite) TestModel_GetAll() {
 
 func (s *ModelTestSuite) TestModel_GetAllToStruct() {
 	type PhoneType struct {
-		FormattedNumber string `field:"formated_number"`
+		FormatedNumber string
 	}
 
 	type MessageType struct {
-		Text string `field:"text"`
+		Text string
 	}
 
 	type AddressTYpe struct {
-		City    string `field:"city"`
-		Address string `field:"address"`
+		City    string
+		Address string
 	}
 
 	type UserType struct {
@@ -224,10 +228,10 @@ func (s *ModelTestSuite) TestModel_GetAllToStruct() {
 				Lastname: "Sidorov",
 				Fullname: "Ivan Sidorov",
 				Phone: PhoneType{
-					FormattedNumber: "+1 (111) 1111111",
+					FormatedNumber: "+1 (111) 1111111",
 				},
 				PhonePtr: &PhoneType{
-					FormattedNumber: "+1 (111) 1111111",
+					FormatedNumber: "+1 (111) 1111111",
 				},
 				Messages: []MessageType{
 					{Text: "Message 1"},
@@ -256,10 +260,10 @@ func (s *ModelTestSuite) TestModel_GetAllToStruct() {
 				Lastname: "Bond",
 				Fullname: "James Bond",
 				Phone: PhoneType{
-					FormattedNumber: "+3 (333) 3333333",
+					FormatedNumber: "+3 (333) 3333333",
 				},
 				PhonePtr: &PhoneType{
-					FormattedNumber: "+3 (333) 3333333",
+					FormatedNumber: "+3 (333) 3333333",
 				},
 				Addresses: []AddressTYpe{
 					{City: "Crowley", Address: "524 Pecan Street"},
