@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-qbit/model"
 	"github.com/go-qbit/qerror"
+	"github.com/go-qbit/timelog"
 )
 
 var exprProcessor = &ExprProcessor{}
@@ -66,6 +67,9 @@ func (s *Storage) GetModelsNames() []string {
 }
 
 func (s *Storage) Add(ctx context.Context, m model.IModel, fields []string, data [][]interface{}) ([]interface{}, error) {
+	ctx = timelog.Start(ctx, "Storage.Add")
+	defer timelog.Finish(ctx)
+
 	pKeys := make([]interface{}, len(data))
 
 	s.mtx.Lock()
@@ -89,6 +93,9 @@ func (s *Storage) Add(ctx context.Context, m model.IModel, fields []string, data
 }
 
 func (s *Storage) Query(ctx context.Context, m model.IModel, fieldsNames []string, options model.QueryOptions) ([]map[string]interface{}, error) {
+	ctx = timelog.Start(ctx, "Storage.Query")
+	defer timelog.Finish(ctx)
+
 	var res []map[string]interface{}
 
 	s.mtx.RLock()

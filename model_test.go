@@ -8,6 +8,7 @@ import (
 	"github.com/go-qbit/model"
 	"github.com/go-qbit/model/expr"
 	"github.com/go-qbit/model/test"
+	"github.com/go-qbit/timelog"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -213,13 +214,19 @@ func (s *ModelTestSuite) TestModel_GetAllToStruct() {
 
 	var res []UserType
 
+	ctx := timelog.Start(context.Background(), "Get all data to structure")
+
 	s.NoError(s.user.GetAllToStruct(
-		context.Background(),
+		ctx,
 		&res,
 		model.GetAllOptions{
 			Filter: expr.Lt(expr.ModelField("id"), expr.Value(4)),
 		},
 	))
+
+	timelog.Finish(ctx)
+
+	s.True(len(timelog.Get(ctx).Analyze().String()) > 255, "To short TimeLog")
 
 	s.Equal(
 		[]UserType{

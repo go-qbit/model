@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-qbit/model/expr"
 	"github.com/go-qbit/qerror"
+	"github.com/go-qbit/timelog"
 )
 
 type BaseModel struct {
@@ -147,6 +148,9 @@ func (m *BaseModel) GetRelation(modelName string) *Relation {
 }
 
 func (m *BaseModel) AddMulti(ctx context.Context, fieldsNames []string, data [][]interface{}) ([]interface{}, error) {
+	ctx = timelog.Start(ctx, m.GetId()+": AddMulti")
+	defer timelog.Finish(ctx)
+
 	if len(data) == 0 {
 		return nil, nil
 	}
@@ -221,6 +225,9 @@ func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}) ([]int
 }
 
 func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, options GetAllOptions) ([]map[string]interface{}, error) {
+	ctx = timelog.Start(ctx, m.GetId()+": GetAll")
+	defer timelog.Finish(ctx)
+
 	requestedLocalFields := make(map[string]struct{})
 	requestedExtFields := make(map[string]map[string]struct{})
 
@@ -407,6 +414,9 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, options Ge
 }
 
 func (m *BaseModel) GetAllToStruct(ctx context.Context, arr interface{}, options GetAllOptions) error {
+	ctx = timelog.Start(ctx, m.GetId()+": GetAllToStruct")
+	defer timelog.Finish(ctx)
+
 	rt := reflect.TypeOf(arr)
 	if rt.Kind() != reflect.Ptr {
 		return qerror.New("Invalid type '%s', must be pointer to slice of struct", rt.String())
