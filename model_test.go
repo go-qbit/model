@@ -49,7 +49,7 @@ func (s *ModelTestSuite) SetupTest() {
 			{3, "James", "Bond"},
 			{4, "John", "Connor"},
 			{5, "Sara", "Connor"},
-		},
+		}, model.AddOptions{},
 	)
 
 	s.NoError(err)
@@ -59,7 +59,7 @@ func (s *ModelTestSuite) SetupTest() {
 		[][]interface{}{
 			{1, 1, 111, 1111111},
 			{3, 3, 333, 3333333},
-		},
+		}, model.AddOptions{},
 	)
 	s.NoError(err)
 
@@ -70,7 +70,7 @@ func (s *ModelTestSuite) SetupTest() {
 			{20, "Message 2", 1},
 			{30, "Message 3", 1},
 			{40, "Message 4", 2},
-		},
+		}, model.AddOptions{},
 	)
 	s.NoError(err)
 
@@ -82,7 +82,7 @@ func (s *ModelTestSuite) SetupTest() {
 			{300, "USA", "Crowley", "524 Pecan Street"},
 			{400, "USA", "Arlington", "1022 Bridges Dr"},
 			{500, "USA", "Louisville", "1246 Everett Avenue"},
-		},
+		}, model.AddOptions{},
 	)
 	s.NoError(err)
 
@@ -96,7 +96,8 @@ func (s *ModelTestSuite) SetupTest() {
 			{3, 300},
 			{4, 400},
 			{5, 500},
-		})
+		}, model.AddOptions{},
+	)
 	s.NoError(err)
 }
 

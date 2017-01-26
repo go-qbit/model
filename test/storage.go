@@ -66,7 +66,7 @@ func (s *Storage) GetModelsNames() []string {
 	return res
 }
 
-func (s *Storage) Add(ctx context.Context, m model.IModel, fields []string, data [][]interface{}) ([]interface{}, error) {
+func (s *Storage) Add(ctx context.Context, m model.IModel, fields []string, data [][]interface{}, opts model.AddOptions) ([]interface{}, error) {
 	ctx = timelog.Start(ctx, "Storage.Add")
 	defer timelog.Finish(ctx)
 
@@ -92,7 +92,7 @@ func (s *Storage) Add(ctx context.Context, m model.IModel, fields []string, data
 	return pKeys, nil
 }
 
-func (s *Storage) Query(ctx context.Context, m model.IModel, fieldsNames []string, options model.QueryOptions) ([]map[string]interface{}, error) {
+func (s *Storage) Query(ctx context.Context, m model.IModel, fieldsNames []string, options model.GetAllOptions) ([]map[string]interface{}, error) {
 	ctx = timelog.Start(ctx, "Storage.Query")
 	defer timelog.Finish(ctx)
 

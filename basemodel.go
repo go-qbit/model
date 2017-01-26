@@ -147,7 +147,7 @@ func (m *BaseModel) GetRelation(modelName string) *Relation {
 	}
 }
 
-func (m *BaseModel) AddMulti(ctx context.Context, fieldsNames []string, data [][]interface{}) ([]interface{}, error) {
+func (m *BaseModel) AddMulti(ctx context.Context, fieldsNames []string, data [][]interface{}, opts AddOptions) ([]interface{}, error) {
 	ctx = timelog.Start(ctx, m.GetId()+": AddMulti")
 	defer timelog.Finish(ctx)
 
@@ -195,10 +195,10 @@ func (m *BaseModel) AddMulti(ctx context.Context, fieldsNames []string, data [][
 		}
 	}
 
-	return m.storage.Add(ctx, m, fieldsNames, data)
+	return m.storage.Add(ctx, m, fieldsNames, data, opts)
 }
 
-func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}) ([]interface{}, error) {
+func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}, opts AddOptions) ([]interface{}, error) {
 	rt := reflect.TypeOf(data)
 
 	if rt.Kind() != reflect.Slice || rt.Elem().Kind() != reflect.Struct {
@@ -221,10 +221,10 @@ func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}) ([]int
 		flatData[i] = flatRow
 	}
 
-	return m.AddMulti(ctx, fields, flatData)
+	return m.AddMulti(ctx, fields, flatData, opts)
 }
 
-func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, options GetAllOptions) ([]map[string]interface{}, error) {
+func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAllOptions) ([]map[string]interface{}, error) {
 	ctx = timelog.Start(ctx, m.GetId()+": GetAll")
 	defer timelog.Finish(ctx)
 
@@ -288,12 +288,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, options Ge
 			needLocalFieldsNamesArr = append(needLocalFieldsNamesArr, fieldName)
 		}
 	}
-	values, err := m.storage.Query(ctx, m, needLocalFieldsNamesArr, QueryOptions{
-		Filter:  options.Filter,
-		OrderBy: options.OrderBy,
-		Limit:   options.Limit,
-		Offset:  options.Offset,
-	})
+	values, err := m.storage.Query(ctx, m, needLocalFieldsNamesArr, opts)
 	if err != nil {
 		return nil, err
 	}
