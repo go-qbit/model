@@ -42,13 +42,14 @@ func (s *ModelTestSuite) SetupTest() {
 		[]struct {
 			Id       int
 			Name     string
+			Dummy    string `field:"-"`
 			Lastname string
 		}{
-			{1, "Ivan", "Sidorov"},
-			{2, "Petr", "Ivanov"},
-			{3, "James", "Bond"},
-			{4, "John", "Connor"},
-			{5, "Sara", "Connor"},
+			{1, "Ivan", "", "Sidorov"},
+			{2, "Petr", "", "Ivanov"},
+			{3, "James", "", "Bond"},
+			{4, "John", "", "Connor"},
+			{5, "Sara", "", "Connor"},
 		}, model.AddOptions{},
 	)
 

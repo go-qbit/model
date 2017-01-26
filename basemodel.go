@@ -208,23 +208,29 @@ func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}, opts A
 		return nil, qerror.New("Invalid type '%s', must to slice of struct", rt.String())
 	}
 
-	fields := make([]string, rt.Elem().NumField())
+	fieldsNames := make([]string, 0, rt.Elem().NumField())
+	fieldsNums := make([]int, 0, rt.Elem().NumField())
 	for i := 0; i < rt.Elem().NumField(); i++ {
-		fields[i] = m.structFieldToFieldName(rt.Elem().Field(i))
+		if rt.Elem().Field(i).Tag.Get("field") == "-" {
+			continue
+		}
+
+		fieldsNames = append(fieldsNames, m.structFieldToFieldName(rt.Elem().Field(i)))
+		fieldsNums = append(fieldsNums, i)
 	}
 
 	rData := reflect.ValueOf(data)
 	flatData := make([][]interface{}, rData.Len())
 
 	for i := 0; i < rData.Len(); i++ {
-		flatRow := make([]interface{}, len(fields))
-		for j := 0; j < len(fields); j++ {
-			flatRow[j] = rData.Index(i).Field(j).Interface()
+		flatRow := make([]interface{}, len(fieldsNames))
+		for j := 0; j < len(fieldsNames); j++ {
+			flatRow[j] = rData.Index(i).Field(fieldsNums[j]).Interface()
 		}
 		flatData[i] = flatRow
 	}
 
-	return m.AddMulti(ctx, fields, flatData, opts)
+	return m.AddMulti(ctx, fieldsNames, flatData, opts)
 }
 
 func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAllOptions) ([]map[string]interface{}, error) {
