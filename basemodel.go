@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -131,6 +132,8 @@ func (m *BaseModel) GetRelations() []string {
 	for name, _ := range m.extModels {
 		res = append(res, name)
 	}
+
+	sort.Strings(res)
 
 	return res
 }
