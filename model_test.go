@@ -35,7 +35,7 @@ func (s *ModelTestSuite) SetupTest() {
 	s.address = test.NewAddress(s.storage)
 
 	model.AddOneToOneRelation(s.phone, s.user, false)
-	model.AddManyToOneRelation(s.message, s.user)
+	model.AddManyToOneRelation(s.message, s.user, false)
 	model.AddManyToManyRelation(s.user, s.address, s.storage)
 
 	_, err := s.user.AddFromStructs(context.Background(),

@@ -55,13 +55,13 @@ func AddOneToOneRelation(model1, model2 IModel, required bool) {
 	}, nil)
 }
 
-func AddManyToOneRelation(model1, model2 IModel) {
+func AddManyToOneRelation(model1, model2 IModel, required bool) {
 	fkFieldsNames := make([]string, len(model2.GetPKFieldsNames()))
 	fkFields := make([]IFieldDefinition, len(fkFieldsNames))
 	for i, pkFieldName := range model2.GetPKFieldsNames() {
 		fkName := "fk__" + model2.GetId() + "__" + pkFieldName
 		fkFieldsNames[i] = fkName
-		fkFields[i] = model2.GetFieldDefinition(pkFieldName).CloneForFK(fkName, "FK field", true)
+		fkFields[i] = model2.GetFieldDefinition(pkFieldName).CloneForFK(fkName, "FK field", required)
 	}
 
 	model1.AddRelation(Relation{
@@ -69,6 +69,7 @@ func AddManyToOneRelation(model1, model2 IModel) {
 		RelationType:     RELATION_MANY_TO_ONE,
 		LocalFieldsNames: fkFieldsNames,
 		FkFieldsNames:    model1.GetPKFieldsNames(),
+		IsRequired:       required,
 	}, fkFields)
 
 	model2.AddRelation(Relation{
@@ -76,7 +77,6 @@ func AddManyToOneRelation(model1, model2 IModel) {
 		RelationType:     RELATION_ONE_TO_MANY,
 		LocalFieldsNames: model1.GetPKFieldsNames(),
 		FkFieldsNames:    fkFieldsNames,
-		IsRequired:       true,
 		IsBack:           true,
 	}, nil)
 }
