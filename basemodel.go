@@ -16,6 +16,11 @@ import (
 	"github.com/go-qbit/timelog"
 )
 
+type ModelLink struct {
+	Pk  []interface{}
+	Fks [][]interface{}
+}
+
 type BaseModel struct {
 	id            string
 	fields        []IFieldDefinition
@@ -150,17 +155,17 @@ func (m *BaseModel) GetRelation(modelName string) *Relation {
 	}
 }
 
-func (m *BaseModel) AddMulti(ctx context.Context, fieldsNames []string, data [][]interface{}, opts AddOptions) ([]interface{}, error) {
+func (m *BaseModel) AddMulti(ctx context.Context, data *Data, opts AddOptions) (*Data, error) {
 	ctx = timelog.Start(ctx, m.GetId()+": AddMulti")
 	defer timelog.Finish(ctx)
 
-	if len(data) == 0 {
+	if data.Len() == 0 {
 		return nil, nil
 	}
 
 	fieldsMap := make(map[string]struct{})
-	fields := make([]IFieldDefinition, len(fieldsNames))
-	for i, fieldName := range fieldsNames {
+	fields := make([]IFieldDefinition, len(data.Fields()))
+	for i, fieldName := range data.Fields() {
 		fields[i] = m.GetFieldDefinition(fieldName)
 		if fields[i] == nil {
 			return nil, qerror.New("Unknown field '%s' in model '%s'", fieldName, m.id)
@@ -182,7 +187,7 @@ func (m *BaseModel) AddMulti(ctx context.Context, fieldsNames []string, data [][
 		}
 	}
 
-	for _, row := range data {
+	for _, row := range data.Data() {
 		if len(row) != len(fields) {
 			return nil, qerror.New("Invalid columns number")
 		}
@@ -192,16 +197,52 @@ func (m *BaseModel) AddMulti(ctx context.Context, fieldsNames []string, data [][
 				return nil, qerror.New("Missed required field '%s' value in model '%s'", field.GetId(), m.id)
 			}
 
+			var err error
+			if row[i], err = field.Clean(row[i]); err != nil {
+				return nil, err
+			}
+
 			if err := field.Check(row[i]); err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	return m.storage.Add(ctx, m, fieldsNames, data, opts)
+	return m.storage.Add(ctx, m, data, opts)
 }
 
-func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}, opts AddOptions) ([]interface{}, error) {
+func (m *BaseModel) Link(ctx context.Context, extModelName string, links []ModelLink) error {
+	ctx = timelog.Start(ctx, m.GetId()+": Link to "+extModelName)
+	defer timelog.Finish(ctx)
+
+	relation := m.GetRelation(extModelName)
+	if relation == nil {
+		return qerror.New("No relation found between %s and %s", m.GetId(), extModelName)
+	}
+
+	switch relation.RelationType {
+	case RELATION_MANY_TO_MANY:
+		data := NewEmptyData(append(relation.JunctionLocalFieldsNames, relation.JunctionFkFieldsNames...))
+		for _, link := range links {
+			for _, fk := range link.Fks {
+				if err := data.Add(append(link.Pk, fk...)); err != nil {
+					return err
+				}
+			}
+		}
+
+		_, err := relation.JunctionModel.AddMulti(ctx, data, AddOptions{Replace: true})
+
+		return err
+
+	default:
+		panic("Not implemented") //ToDo
+	}
+
+	return nil
+}
+
+func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}, opts AddOptions) (*Data, error) {
 	rt := reflect.TypeOf(data)
 
 	if rt.Kind() != reflect.Slice || rt.Elem().Kind() != reflect.Struct {
@@ -220,20 +261,20 @@ func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}, opts A
 	}
 
 	rData := reflect.ValueOf(data)
-	flatData := make([][]interface{}, rData.Len())
+	flatData := NewEmptyData(fieldsNames)
 
 	for i := 0; i < rData.Len(); i++ {
 		flatRow := make([]interface{}, len(fieldsNames))
 		for j := 0; j < len(fieldsNames); j++ {
 			flatRow[j] = rData.Index(i).Field(fieldsNums[j]).Interface()
 		}
-		flatData[i] = flatRow
+		flatData.Add(flatRow)
 	}
 
-	return m.AddMulti(ctx, fieldsNames, flatData, opts)
+	return m.AddMulti(ctx, flatData, opts)
 }
 
-func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAllOptions) ([]map[string]interface{}, error) {
+func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAllOptions) (*Data, error) {
 	ctx = timelog.Start(ctx, m.GetId()+": GetAll")
 	defer timelog.Finish(ctx)
 
@@ -297,10 +338,12 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 			needLocalFieldsNamesArr = append(needLocalFieldsNamesArr, fieldName)
 		}
 	}
-	values, err := m.storage.Query(ctx, m, needLocalFieldsNamesArr, opts)
+	valuesData, err := m.storage.Query(ctx, m, needLocalFieldsNamesArr, opts)
 	if err != nil {
 		return nil, err
 	}
+
+	values := valuesData.Maps()
 
 	extData := make(map[string]map[string][]map[string]interface{})
 	localPk := m.GetPKFieldsNames()
@@ -330,7 +373,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 			junctionValuesMap := make(map[string][]string)
 			filter = expr.In(expr.ModelField(relation.FkFieldsNames[0]))
 
-			for _, value := range junctionValues {
+			for _, value := range junctionValues.Maps() {
 				key := junctionModel.FieldsToString(relation.JunctionFkFieldsNames, value)
 				junctionValuesMap[key] = append(junctionValuesMap[key], junctionModel.FieldsToString(relation.JunctionLocalFieldsNames, value))
 				filter.Add(expr.Value(value[relation.JunctionFkFieldsNames[0]]))
@@ -345,7 +388,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 				return nil, err
 			}
 
-			for _, extRow := range extValues {
+			for _, extRow := range extValues.Maps() {
 				for _, fk := range junctionValuesMap[extModel.FieldsToString(relation.FkFieldsNames, extRow)] {
 					extValuesMap[fk] = append(extValuesMap[fk], extRow)
 				}
@@ -361,7 +404,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 				return nil, err
 			}
 
-			for _, extRow := range extValues {
+			for _, extRow := range extValues.Maps() {
 				stringFk := extModel.FieldsToString(relation.FkFieldsNames, extRow)
 				extValuesMap[stringFk] = append(extValuesMap[stringFk], extRow)
 			}
@@ -414,7 +457,28 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 		}
 	}
 
-	return values, nil
+	resFields := make([]string, 0, len(requestedLocalFields)+len(requestedExtFields))
+	for fieldName, _ := range requestedLocalFields {
+		resFields = append(resFields, fieldName)
+	}
+	for fieldName, _ := range requestedExtFields {
+		resFields = append(resFields, fieldName)
+	}
+
+	res := NewEmptyData(resFields)
+	for _, row := range values {
+		resRow := make([]interface{}, len(resFields))
+
+		for i, fieldName := range resFields {
+			resRow[i] = row[fieldName]
+		}
+
+		if err := res.Add(resRow); err != nil {
+			return nil, err
+		}
+	}
+
+	return res, nil
 }
 
 func (m *BaseModel) GetAllToStruct(ctx context.Context, arr interface{}, options GetAllOptions) error {
@@ -441,9 +505,9 @@ func (m *BaseModel) GetAllToStruct(ctx context.Context, arr interface{}, options
 		return err
 	}
 
-	arrValue := reflect.MakeSlice(rt, len(data), len(data))
+	arrValue := reflect.MakeSlice(rt, data.Len(), data.Len())
 
-	for i, row := range data {
+	for i, row := range data.Maps() {
 		if err := m.mapToVar(row, arrValue.Index(i)); err != nil {
 			return err
 		}
@@ -519,12 +583,16 @@ func (m *BaseModel) getFieldsFromStruct(t reflect.Type) ([]string, error) {
 				res = append(res, fieldName+"."+extFieldName)
 			}
 		case reflect.Slice:
-			extFields, err := m.getFieldsFromStruct(field.Type.Elem())
-			if err != nil {
-				return nil, err
-			}
-			for _, extFieldName := range extFields {
-				res = append(res, fieldName+"."+extFieldName)
+			if field.Type.Elem().Kind() == reflect.Struct {
+				extFields, err := m.getFieldsFromStruct(field.Type.Elem())
+				if err != nil {
+					return nil, err
+				}
+				for _, extFieldName := range extFields {
+					res = append(res, fieldName + "." + extFieldName)
+				}
+			} else {
+				res = append(res, fieldName)
 			}
 		case reflect.Ptr:
 			extFields, err := m.getFieldsFromStruct(field.Type.Elem())
@@ -563,19 +631,20 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 			}
 		}
 	case reflect.Slice:
-		vSlice, ok := v.([]map[string]interface{})
-
-		if !ok {
+		switch v := v.(type) {
+		case []byte:
+			s.Set(reflect.ValueOf(v))
+		case []map[string]interface{}:
+			newSlice := reflect.MakeSlice(s.Type(), len(v), len(v))
+			for i, _ := range v {
+				if err := m.mapToVar(v[i], newSlice.Index(i)); err != nil {
+					return err
+				}
+			}
+			s.Set(newSlice)
+		default:
 			return qerror.New("Invalid type %T for converting to slice", v)
 		}
-
-		newSlice := reflect.MakeSlice(s.Type(), len(vSlice), len(vSlice))
-		for i, _ := range vSlice {
-			if err := m.mapToVar(vSlice[i], newSlice.Index(i)); err != nil {
-				return err
-			}
-		}
-		s.Set(newSlice)
 	default:
 		s.Set(reflect.ValueOf(v))
 	}

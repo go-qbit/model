@@ -11,6 +11,7 @@ type IFieldDefinition interface {
 	GetDependsOn() []string
 	Calc(map[string]interface{}) (interface{}, error)
 	Check(interface{}) error
+	Clean(interface{}) (interface{}, error)
 	CloneForFK(id string, caption string, required bool) IFieldDefinition
 }
 
@@ -25,6 +26,7 @@ type IntField struct {
 	Caption   string
 	Required  bool
 	CheckFunc func(interface{}) error
+	CleanFunc func(interface{}) (interface{}, error)
 }
 
 func (f *IntField) GetId() string                                    { return f.Id }
@@ -41,8 +43,15 @@ func (f *IntField) Check(v interface{}) error {
 		return nil
 	}
 }
+func (f *IntField) Clean(v interface{}) (interface{}, error) {
+	if f.CleanFunc != nil {
+		return f.CleanFunc(v)
+	} else {
+		return v, nil
+	}
+}
 func (f *IntField) CloneForFK(id string, caption string, required bool) IFieldDefinition {
-	return &IntField{id, caption, required, f.CheckFunc}
+	return &IntField{id, caption, required, f.CheckFunc, f.CleanFunc}
 }
 
 type StringField struct {
@@ -50,6 +59,7 @@ type StringField struct {
 	Caption   string
 	Required  bool
 	CheckFunc func(interface{}) error
+	CleanFunc func(interface{}) (interface{}, error)
 }
 
 func (f *StringField) GetId() string                                    { return f.Id }
@@ -66,8 +76,15 @@ func (f *StringField) Check(v interface{}) error {
 		return nil
 	}
 }
+func (f *StringField) Clean(v interface{}) (interface{}, error) {
+	if f.CleanFunc != nil {
+		return f.CleanFunc(v)
+	} else {
+		return v, nil
+	}
+}
 func (f *StringField) CloneForFK(id string, caption string, required bool) IFieldDefinition {
-	return &StringField{id, caption, required, f.CheckFunc}
+	return &StringField{id, caption, required, f.CheckFunc, f.CleanFunc}
 }
 
 type DerivableField struct {
@@ -85,6 +102,7 @@ func (f *DerivableField) IsDerivable() bool                                    {
 func (f *DerivableField) GetDependsOn() []string                               { return f.DependsOn }
 func (f *DerivableField) Calc(row map[string]interface{}) (interface{}, error) { return f.Get(row) }
 func (f *DerivableField) Check(v interface{}) error                            { return nil }
+func (f *DerivableField) Clean(v interface{}) (interface{}, error)             { return v, nil }
 func (f *DerivableField) CloneForFK(id string, caption string, required bool) IFieldDefinition {
 	panic("Derivable field cannot be FK")
 }

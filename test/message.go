@@ -1,6 +1,8 @@
 package test
 
 import (
+	"strings"
+
 	"github.com/go-qbit/model"
 )
 
@@ -22,6 +24,9 @@ func NewMessage(storage model.IStorage) *Message {
 					Id:       "text",
 					Caption:  "Message text",
 					Required: true,
+					CleanFunc: func(v interface{}) (interface{}, error) {
+						return strings.Trim(v.(string), " \t"), nil
+					},
 				},
 			},
 			[]string{"id"},

@@ -55,27 +55,27 @@ func (s *ModelTestSuite) SetupTest() {
 
 	s.NoError(err)
 
-	_, err = s.phone.AddMulti(context.Background(),
+	_, err = s.phone.AddMulti(context.Background(), model.NewData(
 		[]string{"id", "country_code", "code", "number"},
 		[][]interface{}{
 			{1, 1, 111, 1111111},
 			{3, 3, 333, 3333333},
-		}, model.AddOptions{},
+		}), model.AddOptions{},
 	)
 	s.NoError(err)
 
-	_, err = s.message.AddMulti(context.Background(),
-		[]string{"id", "text", "fk__user__id"},
+	_, err = s.message.AddMulti(context.Background(), model.NewData(
+		[]string{"id", "text", "fk_user_id"},
 		[][]interface{}{
-			{10, "Message 1", 1},
+			{10, "Message 1  ", 1},
 			{20, "Message 2", 1},
-			{30, "Message 3", 1},
+			{30, "  Message 3", 1},
 			{40, "Message 4", 2},
-		}, model.AddOptions{},
+		}), model.AddOptions{},
 	)
 	s.NoError(err)
 
-	_, err = s.address.AddMulti(context.Background(),
+	_, err = s.address.AddMulti(context.Background(), model.NewData(
 		[]string{"id", "country", "city", "address"},
 		[][]interface{}{
 			{100, "USA", "Arlington", "1022 Bridges Dr"},
@@ -83,22 +83,17 @@ func (s *ModelTestSuite) SetupTest() {
 			{300, "USA", "Crowley", "524 Pecan Street"},
 			{400, "USA", "Arlington", "1022 Bridges Dr"},
 			{500, "USA", "Louisville", "1246 Everett Avenue"},
-		}, model.AddOptions{},
+		}), model.AddOptions{},
 	)
 	s.NoError(err)
 
-	_, err = s.user.GetRelation("address").JunctionModel.AddMulti(context.Background(),
-		[]string{"fk__user__id", "fk__address__id"},
-		[][]interface{}{
-			{1, 100},
-			{1, 200},
-			{2, 200},
-			{2, 300},
-			{3, 300},
-			{4, 400},
-			{5, 500},
-		}, model.AddOptions{},
-	)
+	s.NoError(s.user.Link(context.Background(), "address", []model.ModelLink{
+		{[]interface{}{1}, [][]interface{}{{100}, {200}}},
+		{[]interface{}{2}, [][]interface{}{{200}, {300}}},
+		{[]interface{}{3}, [][]interface{}{{300}}},
+		{[]interface{}{4}, [][]interface{}{{400}}},
+		{[]interface{}{5}, [][]interface{}{{500}}},
+	}))
 	s.NoError(err)
 }
 
@@ -116,7 +111,7 @@ func (s *ModelTestSuite) TestModel_GetFieldsNames() {
 	)
 
 	s.Equal(
-		[]string{"id", "text", "fk__user__id"},
+		[]string{"id", "text", "fk_user_id"},
 		s.message.GetFieldsNames(),
 	)
 }
@@ -187,7 +182,7 @@ func (s *ModelTestSuite) TestModel_GetAll() {
 				{"city": "Crowley", "address": "524 Pecan Street"},
 			},
 		},
-	}, data)
+	}, data.Maps())
 }
 
 func (s *ModelTestSuite) TestModel_GetAllToStruct() {

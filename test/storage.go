@@ -66,43 +66,45 @@ func (s *Storage) GetModelsNames() []string {
 	return res
 }
 
-func (s *Storage) Add(ctx context.Context, m model.IModel, fields []string, data [][]interface{}, opts model.AddOptions) ([]interface{}, error) {
+func (s *Storage) Add(ctx context.Context, m model.IModel, data *model.Data, opts model.AddOptions) (*model.Data, error) {
 	ctx = timelog.Start(ctx, "Storage.Add")
 	defer timelog.Finish(ctx)
 
-	pKeys := make([]interface{}, len(data))
+	pKeys := model.NewEmptyData(m.GetPKFieldsNames())
 
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 
-	for _, row := range data {
+	for _, row := range data.Data() {
 		dataRow := make(map[string]interface{})
-		for i, field := range fields {
+		for i, field := range data.Fields() {
 			dataRow[field] = row[i]
 		}
 
 		s.data[m.GetId()] = append(s.data[m.GetId()], dataRow)
 
-		pk := make(map[string]interface{})
-		for _, pkName := range m.GetPKFieldsNames() {
-			pk[pkName] = dataRow[pkName]
+		pk := make([]interface{}, len(m.GetPKFieldsNames()))
+		for i, pkName := range m.GetPKFieldsNames() {
+			pk[i] = dataRow[pkName]
 		}
+
+		pKeys.Add(pk)
 	}
 
 	return pKeys, nil
 }
 
-func (s *Storage) Query(ctx context.Context, m model.IModel, fieldsNames []string, options model.GetAllOptions) ([]map[string]interface{}, error) {
+func (s *Storage) Query(ctx context.Context, m model.IModel, fieldsNames []string, options model.GetAllOptions) (*model.Data, error) {
 	ctx = timelog.Start(ctx, "Storage.Query")
 	defer timelog.Finish(ctx)
 
-	var res []map[string]interface{}
+	res := model.NewEmptyData(fieldsNames)
 
 	s.mtx.RLock()
 	s.mtx.RUnlock()
 
 	for _, row := range s.data[m.GetId()] {
-		resRow := make(map[string]interface{})
+		resRow := make([]interface{}, len(fieldsNames))
 
 		if options.Filter != nil {
 			filterRes, err := options.Filter.GetProcessor(exprProcessor).(EvalFunc)(row)
@@ -118,11 +120,11 @@ func (s *Storage) Query(ctx context.Context, m model.IModel, fieldsNames []strin
 			}
 		}
 
-		for _, fieldName := range fieldsNames {
-			resRow[fieldName] = row[fieldName]
+		for i, fieldName := range fieldsNames {
+			resRow[i] = row[fieldName]
 		}
 
-		res = append(res, resRow)
+		res.Add(resRow)
 	}
 
 	return res, nil

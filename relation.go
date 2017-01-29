@@ -59,7 +59,7 @@ func AddManyToOneRelation(model1, model2 IModel, required bool) {
 	fkFieldsNames := make([]string, len(model2.GetPKFieldsNames()))
 	fkFields := make([]IFieldDefinition, len(fkFieldsNames))
 	for i, pkFieldName := range model2.GetPKFieldsNames() {
-		fkName := "fk__" + model2.GetId() + "__" + pkFieldName
+		fkName := "fk_" + model2.GetId() + "_" + pkFieldName
 		fkFieldsNames[i] = fkName
 		fkFields[i] = model2.GetFieldDefinition(pkFieldName).CloneForFK(fkName, "FK field", required)
 	}
@@ -87,14 +87,14 @@ func AddManyToManyRelation(model1, model2 IModel, storage IStorage) {
 
 	fk1Fields := make([]string, len(model1.GetPKFieldsNames()))
 	for i, pkFieldName := range model1.GetPKFieldsNames() {
-		fk1Fields[i] = "fk__" + model1.GetId() + "__" + pkFieldName
+		fk1Fields[i] = "fk_" + model1.GetId() + "_" + pkFieldName
 		junctionPkFields = append(junctionPkFields, fk1Fields[i])
 		junctionFields = append(junctionFields, model1.GetFieldDefinition(pkFieldName).CloneForFK(fk1Fields[i], "FK field", true))
 	}
 
 	fk2Fields := make([]string, len(model2.GetPKFieldsNames()))
 	for i, pkFieldName := range model2.GetPKFieldsNames() {
-		fk2Fields[i] = "fk__" + model2.GetId() + "__" + pkFieldName
+		fk2Fields[i] = "fk_" + model2.GetId() + "_" + pkFieldName
 		junctionPkFields = append(junctionPkFields, fk2Fields[i])
 		junctionFields = append(junctionFields, model2.GetFieldDefinition(pkFieldName).CloneForFK(fk2Fields[i], "FK field", true))
 	}
