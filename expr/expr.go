@@ -15,6 +15,8 @@ type IExpressionProcessor interface {
 	Gt(op1, op2 IExpression) interface{}
 	Ge(op1, op2 IExpression) interface{}
 	In(op IExpression, arr []IExpression) interface{}
+	And(operators []IExpression) interface{}
+	Or(operators []IExpression) interface{}
 	ModelField(fieldName string) interface{}
 	Value(value interface{}) interface{}
 }
@@ -80,6 +82,34 @@ func In(op IExpression) *in         { return &in{op, nil} }
 func (e *in) Add(value IExpression) { e.values = append(e.values, value) }
 func (e *in) GetProcessor(processor IExpressionProcessor) interface{} {
 	return processor.In(e.op, e.values)
+}
+
+// And
+type and struct {
+	ops []IExpression
+}
+
+func And(op1, op2 IExpression, extraOps ...IExpression) *and {
+	return &and{
+		ops: append([]IExpression{op1, op2}, extraOps...),
+	}
+}
+func (e *and) GetProcessor(processor IExpressionProcessor) interface{} {
+	return processor.And(e.ops)
+}
+
+// Or
+type or struct {
+	ops []IExpression
+}
+
+func Or(op1, op2 IExpression, extraOps ...IExpression) *or {
+	return &or{
+		ops: append([]IExpression{op1, op2}, extraOps...),
+	}
+}
+func (e *or) GetProcessor(processor IExpressionProcessor) interface{} {
+	return processor.Or(e.ops)
 }
 
 // Model field

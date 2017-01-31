@@ -92,6 +92,36 @@ func (p *ExprProcessor) In(op expr.IExpression, values []expr.IExpression) inter
 	})
 }
 
+func (p *ExprProcessor) And(operands []expr.IExpression) interface{} {
+	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+		for _, op := range operands {
+			v, err := op.GetProcessor(p).(EvalFunc)(row)
+			if err != nil {
+				return nil, err
+			}
+			if !v.(bool) {
+				return false, nil
+			}
+		}
+		return true, nil
+	})
+}
+
+func (p *ExprProcessor) Or(operands []expr.IExpression) interface{} {
+	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+		for _, op := range operands {
+			v, err := op.GetProcessor(p).(EvalFunc)(row)
+			if err != nil {
+				return nil, err
+			}
+			if v.(bool) {
+				return true, nil
+			}
+		}
+		return false, nil
+	})
+}
+
 func (p *ExprProcessor) ModelField(fieldName string) interface{} {
 	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
 		return row.GetValue(fieldName)
