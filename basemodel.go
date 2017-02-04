@@ -211,13 +211,13 @@ func (m *BaseModel) AddMulti(ctx context.Context, data *Data, opts AddOptions) (
 	return m.storage.Add(ctx, m, data, opts)
 }
 
-func (m *BaseModel) Link(ctx context.Context, extModelName string, links []ModelLink) error {
-	ctx = timelog.Start(ctx, m.GetId()+": Link to "+extModelName)
+func (m *BaseModel) Link(ctx context.Context, extModel IModel, links []ModelLink) error {
+	ctx = timelog.Start(ctx, m.GetId()+": Link to "+extModel.GetId())
 	defer timelog.Finish(ctx)
 
-	relation := m.GetRelation(extModelName)
+	relation := m.GetRelation(extModel.GetId())
 	if relation == nil {
-		return qerror.New("No relation found between %s and %s", m.GetId(), extModelName)
+		return qerror.New("No relation found between %s and %s", m.GetId(), extModel.GetId())
 	}
 
 	switch relation.RelationType {
@@ -589,7 +589,7 @@ func (m *BaseModel) getFieldsFromStruct(t reflect.Type) ([]string, error) {
 					return nil, err
 				}
 				for _, extFieldName := range extFields {
-					res = append(res, fieldName + "." + extFieldName)
+					res = append(res, fieldName+"."+extFieldName)
 				}
 			} else {
 				res = append(res, fieldName)
