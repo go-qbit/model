@@ -377,6 +377,18 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 		return nil, err
 	}
 
+	resFields := make([]string, 0, len(requestedLocalFields)+len(requestedExtFields))
+	for fieldName, _ := range requestedLocalFields {
+		resFields = append(resFields, fieldName)
+	}
+	for fieldName, _ := range requestedExtFields {
+		resFields = append(resFields, fieldName)
+	}
+
+	if valuesData.Len() == 0 {
+		return NewEmptyData(resFields), nil
+	}
+
 	values := valuesData.Maps()
 
 	extData := make(map[string]map[string][]map[string]interface{})
@@ -489,14 +501,6 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 				delete(value, key)
 			}
 		}
-	}
-
-	resFields := make([]string, 0, len(requestedLocalFields)+len(requestedExtFields))
-	for fieldName, _ := range requestedLocalFields {
-		resFields = append(resFields, fieldName)
-	}
-	for fieldName, _ := range requestedExtFields {
-		resFields = append(resFields, fieldName)
 	}
 
 	res := NewEmptyData(resFields)
