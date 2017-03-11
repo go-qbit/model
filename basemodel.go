@@ -11,10 +11,44 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-qbit/model/expr"
 	"github.com/go-qbit/qerror"
 	"github.com/go-qbit/timelog"
 )
+
+// In
+type exprInS struct {
+	op     IExpression
+	values []IExpression
+}
+
+func exprIn(op IExpression) *exprInS     { return &exprInS{op, nil} }
+func (e *exprInS) Add(value IExpression) { e.values = append(e.values, value) }
+func (e *exprInS) GetProcessor(processor IExpressionProcessor) interface{} {
+	return processor.In(e.op, e.values)
+}
+
+// Model field
+type exprModelFieldS struct {
+	m     IModel
+	field string
+}
+
+func exprModelField(m IModel, field string) *exprModelFieldS {
+	return &exprModelFieldS{m, field}
+}
+func (e *exprModelFieldS) GetProcessor(processor IExpressionProcessor) interface{} {
+	return processor.ModelField(e.m, e.field)
+}
+
+// Value
+type exprValueS struct {
+	data interface{}
+}
+
+func exprValue(v interface{}) *exprValueS { return &exprValueS{v} }
+func (e *exprValueS) GetProcessor(processor IExpressionProcessor) interface{} {
+	return processor.Value(e.data)
+}
 
 type ModelLink struct {
 	Pk  []interface{}
@@ -358,9 +392,9 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 		extValuesMap := make(map[string][]map[string]interface{})
 
 		if relation.JunctionModel != nil {
-			filter := expr.In(expr.ModelField(relation.JunctionLocalFieldsNames[0]))
+			filter := exprIn(exprModelField(relation.JunctionModel, relation.JunctionLocalFieldsNames[0]))
 			for _, row := range values {
-				filter.Add(expr.Value(row[relation.LocalFieldsNames[0]]))
+				filter.Add(exprValue(row[relation.LocalFieldsNames[0]]))
 			}
 
 			junctionFields := append(relation.JunctionLocalFieldsNames, relation.JunctionFkFieldsNames...)
@@ -371,12 +405,12 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 
 			junctionModel := relation.JunctionModel
 			junctionValuesMap := make(map[string][]string)
-			filter = expr.In(expr.ModelField(relation.FkFieldsNames[0]))
+			filter = exprIn(exprModelField(extModel, relation.FkFieldsNames[0]))
 
 			for _, value := range junctionValues.Maps() {
 				key := junctionModel.FieldsToString(relation.JunctionFkFieldsNames, value)
 				junctionValuesMap[key] = append(junctionValuesMap[key], junctionModel.FieldsToString(relation.JunctionLocalFieldsNames, value))
-				filter.Add(expr.Value(value[relation.JunctionFkFieldsNames[0]]))
+				filter.Add(exprValue(value[relation.JunctionFkFieldsNames[0]]))
 			}
 
 			orderBy := make([]Order, len(extFields))
@@ -394,9 +428,9 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 				}
 			}
 		} else {
-			filter := expr.In(expr.ModelField(relation.FkFieldsNames[0]))
+			filter := exprIn(exprModelField(extModel, relation.FkFieldsNames[0]))
 			for _, row := range values {
-				filter.Add(expr.Value(row[relation.LocalFieldsNames[0]]))
+				filter.Add(exprValue(row[relation.LocalFieldsNames[0]]))
 			}
 
 			extValues, err := extModel.GetAll(ctx, extFields, GetAllOptions{Filter: filter})

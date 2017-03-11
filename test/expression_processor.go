@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/go-qbit/model/expr"
+	"github.com/go-qbit/model"
 )
 
 type ExprProcessor struct{}
 
-type EvalFunc func(row expr.IModelRow) (interface{}, error)
+type EvalFunc func(row model.IModelRow) (interface{}, error)
 
-func (p *ExprProcessor) Eq(op1, op2 expr.IExpression) interface{} {
-	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+func (p *ExprProcessor) Eq(op1, op2 model.IExpression) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		lt, err := p.Lt(op1, op2).(EvalFunc)(row)
 		if err != nil {
 			return nil, err
@@ -27,8 +27,8 @@ func (p *ExprProcessor) Eq(op1, op2 expr.IExpression) interface{} {
 	})
 }
 
-func (p *ExprProcessor) Lt(op1, op2 expr.IExpression) interface{} {
-	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+func (p *ExprProcessor) Lt(op1, op2 model.IExpression) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		v1, err1 := op1.GetProcessor(p).(EvalFunc)(row)
 		if err1 != nil {
 			return nil, err1
@@ -58,26 +58,26 @@ func (p *ExprProcessor) Lt(op1, op2 expr.IExpression) interface{} {
 	})
 }
 
-func (p *ExprProcessor) Le(op1, op2 expr.IExpression) interface{} {
-	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+func (p *ExprProcessor) Le(op1, op2 model.IExpression) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		return nil, nil
 	})
 }
 
-func (p *ExprProcessor) Gt(op1, op2 expr.IExpression) interface{} {
-	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+func (p *ExprProcessor) Gt(op1, op2 model.IExpression) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		return p.Lt(op2, op1).(EvalFunc)(row)
 	})
 }
 
-func (p *ExprProcessor) Ge(op1, op2 expr.IExpression) interface{} {
-	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+func (p *ExprProcessor) Ge(op1, op2 model.IExpression) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		return p.Le(op2, op1).(EvalFunc)(row)
 	})
 }
 
-func (p *ExprProcessor) In(op expr.IExpression, values []expr.IExpression) interface{} {
-	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+func (p *ExprProcessor) In(op model.IExpression, values []model.IExpression) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		for _, op2 := range values {
 			eq, err := p.Eq(op, op2).(EvalFunc)(row)
 			if err != nil {
@@ -92,8 +92,8 @@ func (p *ExprProcessor) In(op expr.IExpression, values []expr.IExpression) inter
 	})
 }
 
-func (p *ExprProcessor) And(operands []expr.IExpression) interface{} {
-	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+func (p *ExprProcessor) And(operands []model.IExpression) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		for _, op := range operands {
 			v, err := op.GetProcessor(p).(EvalFunc)(row)
 			if err != nil {
@@ -107,8 +107,8 @@ func (p *ExprProcessor) And(operands []expr.IExpression) interface{} {
 	})
 }
 
-func (p *ExprProcessor) Or(operands []expr.IExpression) interface{} {
-	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+func (p *ExprProcessor) Or(operands []model.IExpression) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		for _, op := range operands {
 			v, err := op.GetProcessor(p).(EvalFunc)(row)
 			if err != nil {
@@ -122,14 +122,21 @@ func (p *ExprProcessor) Or(operands []expr.IExpression) interface{} {
 	})
 }
 
-func (p *ExprProcessor) ModelField(fieldName string) interface{} {
-	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+func (p *ExprProcessor) Any(localModel, extModel model.IModel, filter model.IExpression) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
+		panic("Not implemented")
+		return nil, nil
+	})
+}
+
+func (p *ExprProcessor) ModelField(m model.IModel, fieldName string) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		return row.GetValue(fieldName)
 	})
 }
 
 func (p *ExprProcessor) Value(value interface{}) interface{} {
-	return EvalFunc(func(row expr.IModelRow) (interface{}, error) {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		return value, nil
 	})
 }

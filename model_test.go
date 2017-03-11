@@ -140,7 +140,7 @@ func (s *ModelTestSuite) TestModel_GetAll() {
 			"address.city", "address.address",
 		},
 		model.GetAllOptions{
-			Filter: expr.Lt(expr.ModelField("id"), expr.Value(4)),
+			Filter: expr.Lt(expr.ModelField(s.user, "id"), expr.Value(4)),
 		},
 	)
 	s.NoError(err)
@@ -217,7 +217,7 @@ func (s *ModelTestSuite) TestModel_GetAllToStruct() {
 		ctx,
 		&res,
 		model.GetAllOptions{
-			Filter: expr.Lt(expr.ModelField("id"), expr.Value(4)),
+			Filter: expr.Lt(expr.ModelField(s.user, "id"), expr.Value(4)),
 		},
 	))
 

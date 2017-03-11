@@ -2,8 +2,6 @@ package model
 
 import (
 	"context"
-
-	"github.com/go-qbit/model/expr"
 )
 
 type IModel interface {
@@ -20,12 +18,34 @@ type IModel interface {
 	FieldsToString([]string, map[string]interface{}) string
 }
 
+type IModelRow interface {
+	GetValue(string) (interface{}, error)
+}
+
+type IExpression interface {
+	GetProcessor(IExpressionProcessor) interface{}
+}
+
+type IExpressionProcessor interface {
+	Eq(op1, op2 IExpression) interface{}
+	Lt(op1, op2 IExpression) interface{}
+	Le(op1, op2 IExpression) interface{}
+	Gt(op1, op2 IExpression) interface{}
+	Ge(op1, op2 IExpression) interface{}
+	In(op IExpression, arr []IExpression) interface{}
+	And(operators []IExpression) interface{}
+	Or(operators []IExpression) interface{}
+	Any(localModel, extModel IModel, filter IExpression) interface{}
+	ModelField(model IModel, fieldName string) interface{}
+	Value(value interface{}) interface{}
+}
+
 type AddOptions struct {
 	Replace bool
 }
 
 type GetAllOptions struct {
-	Filter  expr.IExpression
+	Filter  IExpression
 	OrderBy []Order
 	Limit   uint64
 	Offset  uint64
