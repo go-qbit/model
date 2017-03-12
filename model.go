@@ -45,11 +45,12 @@ type AddOptions struct {
 }
 
 type GetAllOptions struct {
-	Distinct bool
-	Filter   IExpression
-	OrderBy  []Order
-	Limit    uint64
-	Offset   uint64
+	Distinct    bool
+	Filter      IExpression
+	OrderBy     []Order
+	Limit       uint64
+	Offset      uint64
+	RowsWoLimit *uint64
 }
 
 type Order struct {
