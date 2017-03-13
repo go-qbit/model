@@ -33,9 +33,9 @@ type exprModelFieldS struct {
 	field string
 }
 
-func exprModelField(m IModel, field string) *exprModelFieldS {
-	return &exprModelFieldS{m, field}
-}
+//func exprModelField(m IModel, field string) *exprModelFieldS {
+//	return &exprModelFieldS{m, field}
+//}
 func (e *exprModelFieldS) GetProcessor(processor IExpressionProcessor) interface{} {
 	return processor.ModelField(e.m, e.field)
 }
@@ -404,7 +404,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 		extValuesMap := make(map[string][]map[string]interface{})
 
 		if relation.JunctionModel != nil {
-			filter := exprIn(exprModelField(relation.JunctionModel, relation.JunctionLocalFieldsNames[0]))
+			filter := exprIn(relation.JunctionModel.FieldExpr(relation.JunctionLocalFieldsNames[0]))
 			for _, row := range values {
 				filter.Add(exprValue(row[relation.LocalFieldsNames[0]]))
 			}
@@ -417,7 +417,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 
 			junctionModel := relation.JunctionModel
 			junctionValuesMap := make(map[string][]string)
-			filter = exprIn(exprModelField(extModel, relation.FkFieldsNames[0]))
+			filter = exprIn(extModel.FieldExpr(relation.FkFieldsNames[0]))
 
 			for _, value := range junctionValues.Maps() {
 				key := junctionModel.FieldsToString(relation.JunctionFkFieldsNames, value)
@@ -440,7 +440,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 				}
 			}
 		} else {
-			filter := exprIn(exprModelField(extModel, relation.FkFieldsNames[0]))
+			filter := exprIn(extModel.FieldExpr(relation.FkFieldsNames[0]))
 			for _, row := range values {
 				filter.Add(exprValue(row[relation.LocalFieldsNames[0]]))
 			}
@@ -598,6 +598,13 @@ func (m *BaseModel) FieldsToString(fieldsNames []string, row map[string]interfac
 	}
 
 	return buf.String()
+}
+
+func (m *BaseModel) FieldExpr(name string) *exprModelFieldS {
+	if m.GetFieldDefinition(name) == nil {
+		return nil
+	}
+	return &exprModelFieldS{m, name}
 }
 
 func (m *BaseModel) getFieldsFromStruct(t reflect.Type) ([]string, error) {
