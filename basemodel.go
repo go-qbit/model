@@ -415,28 +415,30 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 				return nil, err
 			}
 
-			junctionModel := relation.JunctionModel
-			junctionValuesMap := make(map[string][]string)
-			filter = exprIn(extModel.FieldExpr(relation.FkFieldsNames[0]))
+			if junctionValues.Len() > 0 {
+				junctionModel := relation.JunctionModel
+				junctionValuesMap := make(map[string][]string)
+				filter = exprIn(extModel.FieldExpr(relation.FkFieldsNames[0]))
 
-			for _, value := range junctionValues.Maps() {
-				key := junctionModel.FieldsToString(relation.JunctionFkFieldsNames, value)
-				junctionValuesMap[key] = append(junctionValuesMap[key], junctionModel.FieldsToString(relation.JunctionLocalFieldsNames, value))
-				filter.Add(exprValue(value[relation.JunctionFkFieldsNames[0]]))
-			}
+				for _, value := range junctionValues.Maps() {
+					key := junctionModel.FieldsToString(relation.JunctionFkFieldsNames, value)
+					junctionValuesMap[key] = append(junctionValuesMap[key], junctionModel.FieldsToString(relation.JunctionLocalFieldsNames, value))
+					filter.Add(exprValue(value[relation.JunctionFkFieldsNames[0]]))
+				}
 
-			orderBy := make([]Order, len(extFields))
-			for i, _ := range extFields {
-				orderBy[i].FieldName = extFields[i]
-			}
-			extValues, err := extModel.GetAll(ctx, extFields, GetAllOptions{Filter: filter, OrderBy: orderBy})
-			if err != nil {
-				return nil, err
-			}
+				orderBy := make([]Order, len(extFields))
+				for i := range extFields {
+					orderBy[i].FieldName = extFields[i]
+				}
+				extValues, err := extModel.GetAll(ctx, extFields, GetAllOptions{Filter: filter, OrderBy: orderBy})
+				if err != nil {
+					return nil, err
+				}
 
-			for _, extRow := range extValues.Maps() {
-				for _, fk := range junctionValuesMap[extModel.FieldsToString(relation.FkFieldsNames, extRow)] {
-					extValuesMap[fk] = append(extValuesMap[fk], extRow)
+				for _, extRow := range extValues.Maps() {
+					for _, fk := range junctionValuesMap[extModel.FieldsToString(relation.FkFieldsNames, extRow)] {
+						extValuesMap[fk] = append(extValuesMap[fk], extRow)
+					}
 				}
 			}
 		} else {
