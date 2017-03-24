@@ -426,9 +426,9 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 					filter.Add(exprValue(value[relation.JunctionFkFieldsNames[0]]))
 				}
 
-				orderBy := make([]Order, len(extFields))
-				for i := range extFields {
-					orderBy[i].FieldName = extFields[i]
+				orderBy := make([]Order, len(relation.FkFieldsNames))
+				for i := range relation.FkFieldsNames {
+					orderBy[i].FieldName = relation.FkFieldsNames[i]
 				}
 				extValues, err := extModel.GetAll(ctx, extFields, GetAllOptions{Filter: filter, OrderBy: orderBy})
 				if err != nil {
