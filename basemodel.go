@@ -642,12 +642,16 @@ func (m *BaseModel) getFieldsFromStruct(t reflect.Type) ([]string, error) {
 				res = append(res, fieldName)
 			}
 		case reflect.Ptr:
-			extFields, err := m.getFieldsFromStruct(field.Type.Elem())
-			if err != nil {
-				return nil, err
-			}
-			for _, extFieldName := range extFields {
-				res = append(res, fieldName+"."+extFieldName)
+			if field.Type.Elem().Kind() == reflect.Struct {
+				extFields, err := m.getFieldsFromStruct(field.Type.Elem())
+				if err != nil {
+					return nil, err
+				}
+				for _, extFieldName := range extFields {
+					res = append(res, fieldName+"."+extFieldName)
+				}
+			} else {
+				res = append(res, fieldName)
 			}
 		default:
 			res = append(res, fieldName)
@@ -693,7 +697,14 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 			return qerror.New("Invalid type %T for converting to slice", v)
 		}
 	default:
-		s.Set(reflect.ValueOf(v))
+		if s.Kind() != reflect.Ptr && reflect.TypeOf(v).Kind() == reflect.Ptr {
+			rv := reflect.ValueOf(v)
+			if !rv.IsNil() {
+				s.Set(rv.Elem())
+			}
+		} else {
+			s.Set(reflect.ValueOf(v))
+		}
 	}
 
 	return nil
