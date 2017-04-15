@@ -16,6 +16,8 @@ type IModel interface {
 	GetRelation(string) *Relation
 	AddMulti(context.Context, *Data, AddOptions) (*Data, error)
 	GetAll(context.Context, []string, GetAllOptions) (*Data, error)
+	Edit(context.Context, IExpression, map[string]interface{}) error
+	Delete(context.Context, IExpression) error
 	FieldsToString([]string, map[string]interface{}) string
 }
 

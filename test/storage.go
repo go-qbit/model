@@ -26,6 +26,11 @@ func (r DataRow) GetValue(name string) (interface{}, error) {
 	return r[name], nil
 }
 
+func (r DataRow) SetValue(name string, value interface{}) error {
+	r[name] = value
+	return nil
+}
+
 func NewStorage() *Storage {
 	s := &Storage{
 		data:   make(map[string][]DataRow),
@@ -101,7 +106,7 @@ func (s *Storage) Query(ctx context.Context, m model.IModel, fieldsNames []strin
 	res := model.NewEmptyData(fieldsNames)
 
 	s.mtx.RLock()
-	s.mtx.RUnlock()
+	defer s.mtx.RUnlock()
 
 	for _, row := range s.data[m.GetId()] {
 		resRow := make([]interface{}, len(fieldsNames))
@@ -128,4 +133,60 @@ func (s *Storage) Query(ctx context.Context, m model.IModel, fieldsNames []strin
 	}
 
 	return res, nil
+}
+
+func (s *Storage) Edit(ctx context.Context, m model.IModel, filter model.IExpression, newValues map[string]interface{}) error {
+	ctx = timelog.Start(ctx, "Storage.Edit")
+	defer timelog.Finish(ctx)
+
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	for _, row := range s.data[m.GetId()] {
+		filterRes, err := filter.GetProcessor(exprProcessor).(EvalFunc)(row)
+		if err != nil {
+			return err
+		}
+		matched, ok := filterRes.(bool)
+		if !ok {
+			return fmt.Errorf("Invalid filter, must have bool type, not %t", filterRes)
+		}
+		if !matched {
+			continue
+		}
+
+		for name, value := range newValues {
+			if err := row.SetValue(name, value); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *Storage) Delete(ctx context.Context, m model.IModel, filter model.IExpression) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	newData := make([]DataRow, 0)
+	for _, row := range s.data[m.GetId()] {
+		filterRes, err := filter.GetProcessor(exprProcessor).(EvalFunc)(row)
+		if err != nil {
+			return err
+		}
+		matched, ok := filterRes.(bool)
+		if !ok {
+			return fmt.Errorf("Invalid filter, must have bool type, not %t", filterRes)
+		}
+		if matched {
+			continue
+		}
+
+		newData = append(newData, row)
+	}
+
+	s.data[m.GetId()] = newData
+
+	return nil
 }

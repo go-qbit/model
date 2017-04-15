@@ -277,3 +277,48 @@ func (s *ModelTestSuite) TestModel_GetAllToStruct() {
 		res,
 	)
 }
+
+func (s *ModelTestSuite) TestBaseModel_Edit() {
+	err := s.user.Edit(context.Background(), expr.Eq(s.user.FieldExpr("id"), expr.Value(3)), map[string]interface{}{
+		"lastname": "NewName",
+	})
+	s.NoError(err)
+
+	data, err := s.user.GetAll(
+		context.Background(),
+		[]string{"id", "lastname"},
+		model.GetAllOptions{
+			Filter: expr.Lt(expr.ModelField(s.user, "id"), expr.Value(4)),
+		},
+	)
+	s.NoError(err)
+
+	s.Equal([]map[string]interface{}{
+		{
+			"id":       1,
+			"lastname": "Sidorov",
+		},
+		{
+			"id":       2,
+			"lastname": "Ivanov",
+		},
+		{
+			"id":       3,
+			"lastname": "NewName",
+		},
+	}, data.Maps())
+}
+
+func (s *ModelTestSuite) TestBaseModel_Delete() {
+	s.NoError(s.user.Delete(context.Background(), expr.Eq(s.user.FieldExpr("id"), expr.Value(3))))
+
+	data, err := s.user.GetAll(context.Background(), []string{"id"}, model.GetAllOptions{})
+	s.NoError(err)
+
+	s.Equal([]map[string]interface{}{
+		{"id": 1},
+		{"id": 2},
+		{"id": 4},
+		{"id": 5},
+	}, data.Maps())
+}

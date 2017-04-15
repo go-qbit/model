@@ -558,6 +558,26 @@ func (m *BaseModel) GetAllToStruct(ctx context.Context, arr interface{}, options
 	return nil
 }
 
+func (m *BaseModel) Edit(ctx context.Context, filter IExpression, newValues map[string]interface{}) error {
+	ctx = timelog.Start(ctx, m.GetId()+": Edit")
+	defer timelog.Finish(ctx)
+
+	for name := range newValues {
+		if m.GetFieldDefinition(name) == nil {
+			return qerror.New("Unknown field '%s' in model '%s'", name, m.id)
+		}
+	}
+
+	return m.storage.Edit(ctx, m, filter, newValues)
+}
+
+func (m *BaseModel) Delete(ctx context.Context, filter IExpression) error {
+	ctx = timelog.Start(ctx, m.GetId()+": Delete")
+	defer timelog.Finish(ctx)
+
+	return m.storage.Delete(ctx, m, filter)
+}
+
 func (m *BaseModel) FieldsToString(fieldsNames []string, row map[string]interface{}) string {
 	buf := &bytes.Buffer{}
 
