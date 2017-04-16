@@ -708,9 +708,14 @@ func (m *BaseModel) getFieldsFromStruct(t reflect.Type) ([]string, error) {
 func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 	switch s.Kind() {
 	case reflect.Ptr:
+		rv := reflect.ValueOf(v)
+		if rv.Kind() == reflect.Ptr && rv.IsNil() {
+			return nil
+		}
 		newVar := reflect.New(s.Type().Elem())
 		m.mapToVar(v, newVar.Elem())
 		s.Set(newVar)
+
 	case reflect.Struct:
 		vMap, ok := v.(map[string]interface{})
 		if !ok {
@@ -741,7 +746,7 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 			return qerror.New("Invalid type %T for converting to slice", v)
 		}
 	default:
-		if s.Kind() != reflect.Ptr && reflect.TypeOf(v).Kind() == reflect.Ptr {
+		if reflect.TypeOf(v).Kind() == reflect.Ptr {
 			rv := reflect.ValueOf(v)
 			if !rv.IsNil() {
 				s.Set(rv.Elem())
