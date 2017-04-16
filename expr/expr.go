@@ -13,6 +13,17 @@ func (e *eq) GetProcessor(processor model.IExpressionProcessor) interface{} {
 	return processor.Eq(e.op1, e.op2)
 }
 
+// Ne
+type ne struct {
+	op1, op2 model.IExpression
+}
+
+func Ne(op1, op2 model.IExpression) *ne { return &ne{op1, op2} }
+
+func (e *ne) GetProcessor(processor model.IExpressionProcessor) interface{} {
+	return processor.Ne(e.op1, e.op2)
+}
+
 // Lt
 type lt struct {
 	op1, op2 model.IExpression

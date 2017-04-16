@@ -31,6 +31,7 @@ type IExpression interface {
 
 type IExpressionProcessor interface {
 	Eq(op1, op2 IExpression) interface{}
+	Ne(op1, op2 IExpression) interface{}
 	Lt(op1, op2 IExpression) interface{}
 	Le(op1, op2 IExpression) interface{}
 	Gt(op1, op2 IExpression) interface{}

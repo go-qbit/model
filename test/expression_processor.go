@@ -27,6 +27,17 @@ func (p *ExprProcessor) Eq(op1, op2 model.IExpression) interface{} {
 	})
 }
 
+func (p *ExprProcessor) Ne(op1, op2 model.IExpression) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
+		eq, err := p.Eq(op1, op2).(EvalFunc)(row)
+		if err != nil {
+			return nil, err
+		}
+
+		return !eq.(bool), nil
+	})
+}
+
 func (p *ExprProcessor) Lt(op1, op2 model.IExpression) interface{} {
 	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		v1, err1 := op1.GetProcessor(p).(EvalFunc)(row)
