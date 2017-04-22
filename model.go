@@ -55,6 +55,7 @@ type GetAllOptions struct {
 	Limit       uint64
 	Offset      uint64
 	RowsWoLimit *uint64
+	ForUpdate   bool
 }
 
 type Order struct {
