@@ -614,29 +614,85 @@ func (m *BaseModel) FieldsToString(fieldsNames []string, row map[string]interfac
 			buf.WriteString(strconv.FormatUint(v, 10))
 		case string:
 			buf.WriteString(v)
+		case bool:
+			if v {
+				buf.WriteString("TRUE")
+			} else {
+				buf.WriteString("FALSE")
+			}
 
 		case *int:
-			buf.WriteString(strconv.FormatInt(int64(*v), 10))
+			if v == nil {
+				buf.WriteString("NULL")
+			} else {
+				buf.WriteString(strconv.FormatInt(int64(*v), 10))
+			}
 		case *int8:
-			buf.WriteString(strconv.FormatInt(int64(*v), 10))
+			if v == nil {
+				buf.WriteString("NULL")
+			} else {
+				buf.WriteString(strconv.FormatInt(int64(*v), 10))
+			}
 		case *int16:
-			buf.WriteString(strconv.FormatInt(int64(*v), 10))
+			if v == nil {
+				buf.WriteString("NULL")
+			} else {
+				buf.WriteString(strconv.FormatInt(int64(*v), 10))
+			}
 		case *int32:
-			buf.WriteString(strconv.FormatInt(int64(*v), 10))
+			if v == nil {
+				buf.WriteString("NULL")
+			} else {
+				buf.WriteString(strconv.FormatInt(int64(*v), 10))
+			}
 		case *int64:
+			if v == nil {
+				buf.WriteString("NULL")
+			}
 			buf.WriteString(strconv.FormatInt(*v, 10))
 		case *uint:
-			buf.WriteString(strconv.FormatUint(uint64(*v), 10))
+			if v == nil {
+				buf.WriteString("NULL")
+			} else {
+				buf.WriteString(strconv.FormatUint(uint64(*v), 10))
+			}
 		case *uint8:
-			buf.WriteString(strconv.FormatUint(uint64(*v), 10))
+			if v == nil {
+				buf.WriteString("NULL")
+			} else {
+				buf.WriteString(strconv.FormatUint(uint64(*v), 10))
+			}
 		case *uint16:
+			if v == nil {
+				buf.WriteString("NULL")
+			}
 			buf.WriteString(strconv.FormatUint(uint64(*v), 10))
 		case *uint32:
-			buf.WriteString(strconv.FormatUint(uint64(*v), 10))
+			if v == nil {
+				buf.WriteString("NULL")
+			} else {
+				buf.WriteString(strconv.FormatUint(uint64(*v), 10))
+			}
 		case *uint64:
-			buf.WriteString(strconv.FormatUint(*v, 10))
+			if v == nil {
+				buf.WriteString("NULL")
+			} else {
+				buf.WriteString(strconv.FormatUint(*v, 10))
+			}
 		case *string:
-			buf.WriteString(*v)
+			if v == nil {
+				buf.WriteString("NULL")
+			} else {
+				buf.WriteString(*v)
+			}
+		case *bool:
+			if v == nil {
+				buf.WriteString("NULL")
+			} else if *v {
+				buf.WriteString("TRUE")
+			} else {
+				buf.WriteString("FALSE")
+			}
 
 		default:
 			panic(fmt.Sprintf("PkToString is not implemented for type %T", row[fieldName]))
