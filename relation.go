@@ -43,7 +43,7 @@ func AddOneToOneRelation(model1, model2 IModel, required bool) {
 		LocalFieldsNames: model1.GetPKFieldsNames(),
 		FkFieldsNames:    model2.GetPKFieldsNames(),
 		IsRequired:       required,
-	}, nil)
+	}, "", nil)
 
 	model2.AddRelation(Relation{
 		ExtModel:         model1,
@@ -52,10 +52,10 @@ func AddOneToOneRelation(model1, model2 IModel, required bool) {
 		FkFieldsNames:    model1.GetPKFieldsNames(),
 		IsRequired:       true,
 		IsBack:           true,
-	}, nil)
+	}, "", nil)
 }
 
-func AddManyToOneRelation(model1, model2 IModel, required bool) {
+func AddManyToOneRelation(model1, model2 IModel, required bool, alias, backalias string) {
 	fkFieldsNames := make([]string, len(model2.GetPKFieldsNames()))
 	fkFields := make([]IFieldDefinition, len(fkFieldsNames))
 	for i, pkFieldName := range model2.GetPKFieldsNames() {
@@ -70,7 +70,7 @@ func AddManyToOneRelation(model1, model2 IModel, required bool) {
 		LocalFieldsNames: fkFieldsNames,
 		FkFieldsNames:    model1.GetPKFieldsNames(),
 		IsRequired:       required,
-	}, fkFields)
+	}, alias, fkFields)
 
 	model2.AddRelation(Relation{
 		ExtModel:         model1,
@@ -78,7 +78,7 @@ func AddManyToOneRelation(model1, model2 IModel, required bool) {
 		LocalFieldsNames: model1.GetPKFieldsNames(),
 		FkFieldsNames:    fkFieldsNames,
 		IsBack:           true,
-	}, nil)
+	}, backalias, nil)
 }
 
 func AddManyToManyRelation(model1, model2 IModel, storage IStorage) {
@@ -109,7 +109,7 @@ func AddManyToManyRelation(model1, model2 IModel, storage IStorage) {
 		JunctionModel:            junctionModel,
 		JunctionLocalFieldsNames: fk1Fields,
 		JunctionFkFieldsNames:    fk2Fields,
-	}, nil)
+	}, "", nil)
 
 	model2.AddRelation(Relation{
 		ExtModel:                 model1,
@@ -120,19 +120,19 @@ func AddManyToManyRelation(model1, model2 IModel, storage IStorage) {
 		JunctionLocalFieldsNames: fk2Fields,
 		JunctionFkFieldsNames:    fk1Fields,
 		IsBack:                   true,
-	}, nil)
+	}, "", nil)
 
 	junctionModel.AddRelation(Relation{
 		ExtModel:         model1,
 		RelationType:     RELATION_MANY_TO_ONE,
 		LocalFieldsNames: fk1Fields,
 		FkFieldsNames:    model1.GetPKFieldsNames(),
-	}, nil)
+	}, "", nil)
 
 	junctionModel.AddRelation(Relation{
 		ExtModel:         model2,
 		RelationType:     RELATION_MANY_TO_ONE,
 		LocalFieldsNames: fk2Fields,
 		FkFieldsNames:    model2.GetPKFieldsNames(),
-	}, nil)
+	}, "", nil)
 }

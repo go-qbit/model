@@ -152,7 +152,7 @@ func (m *BaseModel) GetAllFieldDependencies(fieldName string) ([]string, error) 
 	return res, nil
 }
 
-func (m *BaseModel) AddRelation(relation Relation, newFields []IFieldDefinition) {
+func (m *BaseModel) AddRelation(relation Relation, alias string, newFields []IFieldDefinition) {
 	for _, newField := range newFields {
 		m.AddField(newField)
 	}
@@ -160,7 +160,10 @@ func (m *BaseModel) AddRelation(relation Relation, newFields []IFieldDefinition)
 	m.extModelsMtx.Lock()
 	defer m.extModelsMtx.Unlock()
 
-	m.extModels[relation.ExtModel.GetId()] = relation
+	if alias == "" {
+		alias = relation.ExtModel.GetId()
+	}
+	m.extModels[alias] = relation
 }
 
 func (m *BaseModel) GetRelations() []string {

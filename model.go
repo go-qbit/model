@@ -11,7 +11,7 @@ type IModel interface {
 	GetFieldDefinition(string) IFieldDefinition
 	FieldExpr(string) *exprModelFieldS
 	//AddField(IFieldDefinition)
-	AddRelation(Relation, []IFieldDefinition)
+	AddRelation(Relation, string, []IFieldDefinition)
 	GetRelations() []string
 	GetRelation(string) *Relation
 	AddMulti(context.Context, *Data, AddOptions) (*Data, error)
