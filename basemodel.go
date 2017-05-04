@@ -141,7 +141,7 @@ func (m *BaseModel) GetAllFieldDependencies(fieldName string) ([]string, error) 
 			}
 		}
 	} else {
-		return nil, qerror.New("Unknown field '%s' in modeld `%s`", fieldName, m.id)
+		return nil, qerror.Errorf("Unknown field '%s' in modeld `%s`", fieldName, m.id)
 	}
 
 	res := make([]string, 0, len(resMap))
@@ -205,11 +205,11 @@ func (m *BaseModel) AddMulti(ctx context.Context, data *Data, opts AddOptions) (
 	for i, fieldName := range data.Fields() {
 		fields[i] = m.GetFieldDefinition(fieldName)
 		if fields[i] == nil {
-			return nil, qerror.New("Unknown field '%s' in model '%s'", fieldName, m.id)
+			return nil, qerror.Errorf("Unknown field '%s' in model '%s'", fieldName, m.id)
 		}
 
 		if fields[i].IsDerivable() {
-			return nil, qerror.New("The field '%s' is derivable in model %s, it cannot be added", fieldName, m.id)
+			return nil, qerror.Errorf("The field '%s' is derivable in model %s, it cannot be added", fieldName, m.id)
 		}
 
 		fieldsMap[fieldName] = struct{}{}
@@ -219,19 +219,19 @@ func (m *BaseModel) AddMulti(ctx context.Context, data *Data, opts AddOptions) (
 		field := m.GetFieldDefinition(fieldName)
 		if field.IsRequired() {
 			if _, exists := fieldsMap[fieldName]; !exists {
-				return nil, qerror.New("Missed required field '%s' in model '%s'", fieldName, m.id)
+				return nil, qerror.Errorf("Missed required field '%s' in model '%s'", fieldName, m.id)
 			}
 		}
 	}
 
 	for _, row := range data.Data() {
 		if len(row) != len(fields) {
-			return nil, qerror.New("Invalid columns number")
+			return nil, qerror.Errorf("Invalid columns number")
 		}
 
 		for i, field := range fields {
 			if field.IsRequired() && row[i] == nil {
-				return nil, qerror.New("Missed required field '%s' value in model '%s'", field.GetId(), m.id)
+				return nil, qerror.Errorf("Missed required field '%s' value in model '%s'", field.GetId(), m.id)
 			}
 
 			var err error
@@ -254,7 +254,7 @@ func (m *BaseModel) Link(ctx context.Context, extModel IModel, links []ModelLink
 
 	relation := m.GetRelation(extModel.GetId())
 	if relation == nil {
-		return qerror.New("No relation found between %s and %s", m.GetId(), extModel.GetId())
+		return qerror.Errorf("No relation found between %s and %s", m.GetId(), extModel.GetId())
 	}
 
 	switch relation.RelationType {
@@ -283,7 +283,7 @@ func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}, opts A
 	rt := reflect.TypeOf(data)
 
 	if rt.Kind() != reflect.Slice || rt.Elem().Kind() != reflect.Struct {
-		return nil, qerror.New("Invalid type '%s', must to slice of struct", rt.String())
+		return nil, qerror.Errorf("Invalid type '%s', must to slice of struct", rt.String())
 	}
 
 	fieldsNames := make([]string, 0, rt.Elem().NumField())
@@ -331,7 +331,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 
 			field := m.GetFieldDefinition(fieldName)
 			if field == nil {
-				return nil, qerror.New("Unknown field '%s' in model '%s'", fieldName, m.id)
+				return nil, qerror.Errorf("Unknown field '%s' in model '%s'", fieldName, m.id)
 			}
 
 			if field.IsDerivable() {
@@ -358,7 +358,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 	for extModelName, _ := range extFields {
 		relation, exists := m.extModels[extModelName]
 		if !exists {
-			return nil, qerror.New("There is no relation between '%s' and '%s'", m.GetId(), extModelName)
+			return nil, qerror.Errorf("There is no relation between '%s' and '%s'", m.GetId(), extModelName)
 		}
 
 		for _, pkFieldName := range relation.LocalFieldsNames {
@@ -530,12 +530,12 @@ func (m *BaseModel) GetAllToStruct(ctx context.Context, arr interface{}, options
 
 	rt := reflect.TypeOf(arr)
 	if rt.Kind() != reflect.Ptr {
-		return qerror.New("Invalid type '%s', must be pointer to slice of struct", rt.String())
+		return qerror.Errorf("Invalid type '%s', must be pointer to slice of struct", rt.String())
 	}
 
 	rt = rt.Elem()
 	if rt.Kind() != reflect.Slice || rt.Elem().Kind() != reflect.Struct {
-		return qerror.New("Invalid type '%s', must be pointer to slice of struct", rt.String())
+		return qerror.Errorf("Invalid type '%s', must be pointer to slice of struct", rt.String())
 	}
 
 	fields, err := m.getFieldsFromStruct(rt.Elem())
@@ -567,7 +567,7 @@ func (m *BaseModel) Edit(ctx context.Context, filter IExpression, newValues map[
 
 	for name := range newValues {
 		if m.GetFieldDefinition(name) == nil {
-			return qerror.New("Unknown field '%s' in model '%s'", name, m.id)
+			return qerror.Errorf("Unknown field '%s' in model '%s'", name, m.id)
 		}
 	}
 
@@ -714,7 +714,7 @@ func (m *BaseModel) FieldExpr(name string) *exprModelFieldS {
 
 func (m *BaseModel) getFieldsFromStruct(t reflect.Type) ([]string, error) {
 	if t.Kind() != reflect.Struct {
-		return nil, qerror.New("Invalid type `%s` for getting fields", t.String())
+		return nil, qerror.Errorf("Invalid type `%s` for getting fields", t.String())
 	}
 
 	var res []string
@@ -778,7 +778,7 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 	case reflect.Struct:
 		vMap, ok := v.(map[string]interface{})
 		if !ok {
-			return qerror.New("Invalid type %T for converting to structure", v)
+			return qerror.Errorf("Invalid type %T for converting to structure", v)
 		}
 
 		for i := 0; i < s.NumField(); i++ {
@@ -802,7 +802,7 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 			}
 			s.Set(newSlice)
 		default:
-			return qerror.New("Invalid type %T for converting to slice", v)
+			return qerror.Errorf("Invalid type %T for converting to slice", v)
 		}
 	default:
 		if reflect.TypeOf(v).Kind() == reflect.Ptr {

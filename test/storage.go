@@ -49,7 +49,7 @@ func (s *Storage) RegisterModel(m model.IModel) error {
 	defer s.modelsMtx.Unlock()
 
 	if _, exists := s.models[m.GetId()]; exists {
-		return qerror.New("Model '%s' is already exists", m.GetId())
+		return qerror.Errorf("Model '%s' is already exists", m.GetId())
 	}
 
 	s.models[m.GetId()] = m

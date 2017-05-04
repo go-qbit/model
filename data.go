@@ -42,7 +42,7 @@ func (d *Data) Len() int {
 
 func (d *Data) Add(row []interface{}) error {
 	if len(d.fields) != len(row) {
-		qerror.New("Invalid row size, must be %d", len(d.fields))
+		qerror.Errorf("Invalid row size, must be %d", len(d.fields))
 	}
 
 	d.data = append(d.data, row)
