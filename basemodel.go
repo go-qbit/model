@@ -205,11 +205,11 @@ func (m *BaseModel) AddMulti(ctx context.Context, data *Data, opts AddOptions) (
 	for i, fieldName := range data.Fields() {
 		fields[i] = m.GetFieldDefinition(fieldName)
 		if fields[i] == nil {
-			return nil, qerror.Errorf("Unknown field '%s' in model '%s'", fieldName, m.id)
+			return nil, FieldErrorf(fieldName, "Unknown field '%s' in model '%s'", fieldName, m.id)
 		}
 
 		if fields[i].IsDerivable() {
-			return nil, qerror.Errorf("The field '%s' is derivable in model %s, it cannot be added", fieldName, m.id)
+			return nil, FieldErrorf(fieldName, "The field '%s' is derivable in model %s, it cannot be added", fieldName, m.id)
 		}
 
 		fieldsMap[fieldName] = struct{}{}
@@ -219,28 +219,28 @@ func (m *BaseModel) AddMulti(ctx context.Context, data *Data, opts AddOptions) (
 		field := m.GetFieldDefinition(fieldName)
 		if field.IsRequired() {
 			if _, exists := fieldsMap[fieldName]; !exists {
-				return nil, qerror.Errorf("Missed required field '%s' in model '%s'", fieldName, m.id)
+				return nil, FieldErrorf(fieldName, "Missed required field '%s' in model '%s'", fieldName, m.id)
 			}
 		}
 	}
 
 	for _, row := range data.Data() {
 		if len(row) != len(fields) {
-			return nil, qerror.Errorf("Invalid columns number")
+			return nil, AddErrorf("Invalid columns number")
 		}
 
 		for i, field := range fields {
 			if field.IsRequired() && row[i] == nil {
-				return nil, qerror.Errorf("Missed required field '%s' value in model '%s'", field.GetId(), m.id)
+				return nil, FieldErrorf(field.GetId(), "Missed required field '%s' value in model '%s'", field.GetId(), m.id)
 			}
 
 			var err error
 			if row[i], err = field.Clean(row[i]); err != nil {
-				return nil, err
+				return nil, FieldErrorf(field.GetId(), "%s", err.Error())
 			}
 
 			if err := field.Check(row[i]); err != nil {
-				return nil, err
+				return nil, FieldErrorf(field.GetId(), "%s", err.Error())
 			}
 		}
 	}
