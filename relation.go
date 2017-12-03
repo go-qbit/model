@@ -3,7 +3,7 @@ package model
 type RelationType int
 
 const (
-	RELATION_ONE_TO_ONE RelationType = iota
+	RELATION_ONE_TO_ONE   RelationType = iota
 	RELATION_ONE_TO_MANY
 	RELATION_MANY_TO_ONE
 	RELATION_MANY_TO_MANY
@@ -59,7 +59,15 @@ func AddManyToOneRelation(model1, model2 IModel, required bool, alias, backalias
 	fkFieldsNames := make([]string, len(model2.GetPKFieldsNames()))
 	fkFields := make([]IFieldDefinition, len(fkFieldsNames))
 	for i, pkFieldName := range model2.GetPKFieldsNames() {
-		fkName := "fk_" + model2.GetId() + "_" + pkFieldName
+		fkName := "fk_"
+		if alias != "" {
+			fkName += alias
+		} else {
+			fkName += model2.GetId()
+		}
+
+		fkName += "_" + pkFieldName
+
 		fkFieldsNames[i] = fkName
 		fkFields[i] = model2.GetFieldDefinition(pkFieldName).CloneForFK(fkName, "FK field", required)
 	}
@@ -99,7 +107,9 @@ func AddManyToManyRelation(model1, model2 IModel, storage IStorage) {
 		junctionFields = append(junctionFields, model2.GetFieldDefinition(pkFieldName).CloneForFK(fk2Fields[i], "FK field", true))
 	}
 
-	junctionModel := storage.NewModel("_junction__"+model1.GetId()+"__"+model2.GetId(), junctionFields, junctionPkFields)
+	junctionModel := storage.NewModel("_junction__"+model1.GetId()+"__"+model2.GetId(), junctionFields, BaseModelOpts{
+		PkFieldsNames: junctionPkFields,
+	})
 
 	model1.AddRelation(Relation{
 		ExtModel:                 model2,

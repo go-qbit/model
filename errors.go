@@ -19,6 +19,32 @@ func (e *AddError) Error() string {
 	return e.Message + "\n" + e.BaseError.Error()
 }
 
+type EditError struct {
+	*qerror.BaseError
+	Message string
+}
+
+func EditErrorf(message string, a ...interface{}) *EditError {
+	return &EditError{qerror.New(1), fmt.Sprintf(message, a...)}
+}
+
+func (e *EditError) Error() string {
+	return e.Message + "\n" + e.BaseError.Error()
+}
+
+type DeleteError struct {
+	*qerror.BaseError
+	Message string
+}
+
+func DeleteErrorf(message string, a ...interface{}) *DeleteError {
+	return &DeleteError{qerror.New(1), fmt.Sprintf(message, a...)}
+}
+
+func (e *DeleteError) Error() string {
+	return e.Message + "\n" + e.BaseError.Error()
+}
+
 type FieldError struct {
 	*qerror.BaseError
 	Field   string

@@ -39,8 +39,10 @@ func NewUser(storage model.IStorage) *User {
 					},
 				},
 			},
-			[]string{"id"},
 			storage,
+			model.BaseModelOpts{
+				PkFieldsNames: []string{"id"},
+			},
 		),
 	}
 }

@@ -29,8 +29,10 @@ func NewMessage(storage model.IStorage) *Message {
 					},
 				},
 			},
-			[]string{"id"},
 			storage,
+			model.BaseModelOpts{
+				PkFieldsNames: []string{"id"},
+			},
 		),
 	}
 }

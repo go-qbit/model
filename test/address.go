@@ -34,8 +34,10 @@ func NewAddress(storage model.IStorage) *Address {
 					Caption: "Address",
 				},
 			},
-			[]string{"id"},
 			storage,
+			model.BaseModelOpts{
+				PkFieldsNames: []string{"id"},
+			},
 		),
 	}
 }

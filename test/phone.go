@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+
 	"github.com/go-qbit/model"
 )
 
@@ -46,8 +47,10 @@ func NewPhone(storage model.IStorage) *Phone {
 					},
 				},
 			},
-			[]string{"id"},
 			storage,
+			model.BaseModelOpts{
+				PkFieldsNames: []string{"id"},
+			},
 		),
 	}
 }

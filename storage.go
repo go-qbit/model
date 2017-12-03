@@ -5,7 +5,7 @@ import (
 )
 
 type IStorage interface {
-	NewModel(string, []IFieldDefinition, []string) IModel
+	NewModel(string, []IFieldDefinition, BaseModelOpts) IModel
 	RegisterModel(IModel) error
 	Add(context.Context, IModel, *Data, AddOptions) (*Data, error)
 	Query(context.Context, IModel, []string, GetAllOptions) (*Data, error)

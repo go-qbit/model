@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/go-qbit/qerror"
+	"github.com/go-qbit/rbac"
 	"github.com/go-qbit/timelog"
 )
 
@@ -27,15 +28,22 @@ func (e *exprInS) GetProcessor(processor IExpressionProcessor) interface{} {
 	return processor.In(e.op, e.values)
 }
 
+// And
+type exprAndS struct {
+	op1, op2 IExpression
+}
+
+func exprAnd(op1, op2 IExpression) *exprAndS { return &exprAndS{op1, op2} }
+func (e *exprAndS) GetProcessor(processor IExpressionProcessor) interface{} {
+	return processor.And([]IExpression{e.op1, e.op2})
+}
+
 // Model field
 type exprModelFieldS struct {
 	m     IModel
 	field string
 }
 
-//func exprModelField(m IModel, field string) *exprModelFieldS {
-//	return &exprModelFieldS{m, field}
-//}
 func (e *exprModelFieldS) GetProcessor(processor IExpressionProcessor) interface{} {
 	return processor.ModelField(e.m, e.field)
 }
@@ -56,24 +64,42 @@ type ModelLink struct {
 }
 
 type BaseModel struct {
-	id            string
-	fields        []IFieldDefinition
-	fieldsMtx     sync.RWMutex
-	nameToField   map[string]IFieldDefinition
-	pkFieldsNames []string
-	extModels     map[string]Relation
-	extModelsMtx  sync.RWMutex
-	storage       IStorage
+	id               string
+	fields           []IFieldDefinition
+	fieldsMtx        sync.RWMutex
+	nameToField      map[string]IFieldDefinition
+	pkFieldsNames    []string
+	extModels        map[string]Relation
+	extModelsMtx     sync.RWMutex
+	storage          IStorage
+	addPermission    string
+	editPermission   string
+	deletePermission string
+	defaultFilter    DefaultFilterFunc
 }
 
-func NewBaseModel(id string, fields []IFieldDefinition, pkFieldsNames []string, storage IStorage) *BaseModel {
+type BaseModelOpts struct {
+	PkFieldsNames    []string
+	AddPermission    string
+	EditPermission   string
+	DeletePermission string
+	DefaultFilter    DefaultFilterFunc
+}
+
+type DefaultFilterFunc func(context.Context) (IExpression, error)
+
+func NewBaseModel(id string, fields []IFieldDefinition, storage IStorage, opts BaseModelOpts) *BaseModel {
 	m := &BaseModel{
-		id:            id,
-		fields:        fields,
-		nameToField:   make(map[string]IFieldDefinition),
-		pkFieldsNames: pkFieldsNames,
-		extModels:     make(map[string]Relation),
-		storage:       storage,
+		id:               id,
+		fields:           fields,
+		nameToField:      make(map[string]IFieldDefinition),
+		extModels:        make(map[string]Relation),
+		storage:          storage,
+		pkFieldsNames:    opts.PkFieldsNames,
+		addPermission:    opts.AddPermission,
+		editPermission:   opts.AddPermission,
+		deletePermission: opts.DeletePermission,
+		defaultFilter:    opts.DefaultFilter,
 	}
 
 	if err := storage.RegisterModel(m); err != nil {
@@ -195,6 +221,10 @@ func (m *BaseModel) GetRelation(modelName string) *Relation {
 func (m *BaseModel) AddMulti(ctx context.Context, data *Data, opts AddOptions) (*Data, error) {
 	ctx = timelog.Start(ctx, m.GetId()+": AddMulti")
 	defer timelog.Finish(ctx)
+
+	if m.addPermission != "" && !rbac.HasPermission(ctx, m.addPermission) {
+		return nil, AddErrorf("You don't have permission")
+	}
 
 	if data.Len() == 0 {
 		return nil, nil
@@ -421,12 +451,16 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 			if junctionValues.Len() > 0 {
 				junctionModel := relation.JunctionModel
 				junctionValuesMap := make(map[string][]string)
-				filter = exprIn(extModel.FieldExpr(relation.FkFieldsNames[0]))
-
+				uniq := make(map[interface{}]struct{})
 				for _, value := range junctionValues.Maps() {
 					key := junctionModel.FieldsToString(relation.JunctionFkFieldsNames, value)
 					junctionValuesMap[key] = append(junctionValuesMap[key], junctionModel.FieldsToString(relation.JunctionLocalFieldsNames, value))
-					filter.Add(exprValue(value[relation.JunctionFkFieldsNames[0]]))
+					uniq[value[relation.JunctionFkFieldsNames[0]]] = struct{}{}
+				}
+
+				filter = exprIn(extModel.FieldExpr(relation.FkFieldsNames[0]))
+				for v := range uniq {
+					filter.Add(exprValue(v))
 				}
 
 				orderBy := make([]Order, len(relation.FkFieldsNames))
@@ -445,9 +479,14 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 				}
 			}
 		} else {
-			filter := exprIn(extModel.FieldExpr(relation.FkFieldsNames[0]))
+			uniq := make(map[interface{}]struct{})
 			for _, row := range values {
-				filter.Add(exprValue(row[relation.LocalFieldsNames[0]]))
+				uniq[row[relation.LocalFieldsNames[0]]] = struct{}{}
+			}
+
+			filter := exprIn(extModel.FieldExpr(relation.FkFieldsNames[0]))
+			for v := range uniq {
+				filter.Add(exprValue(v))
 			}
 
 			extValues, err := extModel.GetAll(ctx, extFields, GetAllOptions{Filter: filter})
@@ -565,20 +604,38 @@ func (m *BaseModel) Edit(ctx context.Context, filter IExpression, newValues map[
 	ctx = timelog.Start(ctx, m.GetId()+": Edit")
 	defer timelog.Finish(ctx)
 
+	if m.editPermission != "" && !rbac.HasPermission(ctx, m.editPermission) {
+		return EditErrorf("You don't have permission")
+	}
+
 	for name := range newValues {
 		if m.GetFieldDefinition(name) == nil {
 			return qerror.Errorf("Unknown field '%s' in model '%s'", name, m.id)
 		}
 	}
 
-	return m.storage.Edit(ctx, m, filter, newValues)
+	resFilter, err := m.withDefaultFilter(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	return m.storage.Edit(ctx, m, resFilter, newValues)
 }
 
 func (m *BaseModel) Delete(ctx context.Context, filter IExpression) error {
 	ctx = timelog.Start(ctx, m.GetId()+": Delete")
 	defer timelog.Finish(ctx)
 
-	return m.storage.Delete(ctx, m, filter)
+	if m.deletePermission != "" && !rbac.HasPermission(ctx, m.deletePermission) {
+		return DeleteErrorf("You don't have permission")
+	}
+
+	resFilter, err := m.withDefaultFilter(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	return m.storage.Delete(ctx, m, resFilter)
 }
 
 func (m *BaseModel) FieldsToString(fieldsNames []string, row map[string]interface{}) string {
@@ -793,6 +850,8 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 		switch v := v.(type) {
 		case []byte:
 			s.Set(reflect.ValueOf(v))
+		case *[]byte:
+			s.Set(reflect.ValueOf(v).Elem())
 		case []map[string]interface{}:
 			newSlice := reflect.MakeSlice(s.Type(), len(v), len(v))
 			for i, _ := range v {
@@ -828,4 +887,21 @@ func (m *BaseModel) structFieldToFieldName(field reflect.StructField) string {
 	}
 
 	return fieldName
+}
+
+func (m *BaseModel) withDefaultFilter(ctx context.Context, filter IExpression) (IExpression, error) {
+	if m.defaultFilter == nil {
+		return filter, nil
+	}
+
+	if filter == nil {
+		return m.defaultFilter(ctx)
+	}
+
+	defFilter, err := m.defaultFilter(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return exprAnd(filter, defFilter), nil
 }
