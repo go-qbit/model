@@ -6,6 +6,7 @@ type IFieldDefinition interface {
 	GetId() string
 	GetCaption() string
 	GetType() reflect.Type
+	GetStorageType() string
 	IsDerivable() bool
 	IsRequired() bool
 	GetDependsOn() []string
@@ -32,6 +33,7 @@ type IntField struct {
 func (f *IntField) GetId() string                                    { return f.Id }
 func (f *IntField) GetCaption() string                               { return f.Caption }
 func (f *IntField) GetType() reflect.Type                            { return reflect.TypeOf(int(0)) }
+func (f *IntField) GetStorageType() string                           { return "int" }
 func (f *IntField) IsDerivable() bool                                { return false }
 func (f *IntField) IsRequired() bool                                 { return f.Required }
 func (f *IntField) GetDependsOn() []string                           { return nil }
@@ -65,6 +67,7 @@ type StringField struct {
 func (f *StringField) GetId() string                                    { return f.Id }
 func (f *StringField) GetCaption() string                               { return f.Caption }
 func (f *StringField) GetType() reflect.Type                            { return reflect.TypeOf(int(0)) }
+func (f *StringField) GetStorageType() string                           { return "string" }
 func (f *StringField) IsRequired() bool                                 { return f.Required }
 func (f *StringField) IsDerivable() bool                                { return false }
 func (f *StringField) GetDependsOn() []string                           { return nil }
@@ -96,7 +99,8 @@ type DerivableField struct {
 
 func (f *DerivableField) GetId() string                                        { return f.Id }
 func (f *DerivableField) GetCaption() string                                   { return f.Caption }
-func (f *DerivableField) GetType() reflect.Type                                { return reflect.TypeOf(int(0)) }
+func (f *DerivableField) GetType() reflect.Type                                { var v interface{}; return reflect.TypeOf(v) }
+func (f *DerivableField) GetStorageType() string                               { return "interface{}" }
 func (f *DerivableField) IsRequired() bool                                     { return false }
 func (f *DerivableField) IsDerivable() bool                                    { return true }
 func (f *DerivableField) GetDependsOn() []string                               { return f.DependsOn }

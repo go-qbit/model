@@ -76,7 +76,7 @@ func AddManyToOneRelation(model1, model2 IModel, required bool, alias, backalias
 		ExtModel:         model2,
 		RelationType:     RELATION_MANY_TO_ONE,
 		LocalFieldsNames: fkFieldsNames,
-		FkFieldsNames:    model1.GetPKFieldsNames(),
+		FkFieldsNames:    model2.GetPKFieldsNames(),
 		IsRequired:       required,
 	}, alias, fkFields)
 
