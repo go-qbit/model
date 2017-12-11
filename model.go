@@ -62,3 +62,39 @@ type Order struct {
 	FieldName string
 	Desc      bool
 }
+
+type Relation struct {
+	ExtModel                 IModel
+	RelationType             RelationType
+	LocalFieldsNames         []string
+	FkFieldsNames            []string
+	JunctionModel            IModel
+	JunctionLocalFieldsNames []string
+	JunctionFkFieldsNames    []string
+	IsRequired               bool
+	IsBack                   bool
+}
+
+type RelationType int
+
+const (
+	RELATION_ONE_TO_ONE   RelationType = iota
+	RELATION_ONE_TO_MANY
+	RELATION_MANY_TO_ONE
+	RELATION_MANY_TO_MANY
+)
+
+func (r RelationType) String() string {
+	switch r {
+	case RELATION_ONE_TO_ONE:
+		return "OneToOne"
+	case RELATION_ONE_TO_MANY:
+		return "OneToMany"
+	case RELATION_MANY_TO_ONE:
+		return "ManyToOne"
+	case RELATION_MANY_TO_MANY:
+		return "ManyToMany"
+	default:
+		return "Unknown"
+	}
+}
