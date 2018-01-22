@@ -405,6 +405,13 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 			needLocalFieldsNamesArr = append(needLocalFieldsNamesArr, fieldName)
 		}
 	}
+
+	resFilter, err := m.withDefaultFilter(ctx, opts.Filter)
+	if err != nil {
+		return nil, err
+	}
+
+	opts.Filter = resFilter
 	valuesData, err := m.storage.Query(ctx, m, needLocalFieldsNamesArr, opts)
 	if err != nil {
 		return nil, err
