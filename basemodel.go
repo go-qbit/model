@@ -86,7 +86,7 @@ type BaseModelOpts struct {
 	DefaultFilter    DefaultFilterFunc
 }
 
-type DefaultFilterFunc func(context.Context) (IExpression, error)
+type DefaultFilterFunc func(context.Context, IModel) (IExpression, error)
 
 func NewBaseModel(id string, fields []IFieldDefinition, storage IStorage, opts BaseModelOpts) *BaseModel {
 	m := &BaseModel{
@@ -895,10 +895,10 @@ func (m *BaseModel) withDefaultFilter(ctx context.Context, filter IExpression) (
 	}
 
 	if filter == nil {
-		return m.defaultFilter(ctx)
+		return m.defaultFilter(ctx, m)
 	}
 
-	defFilter, err := m.defaultFilter(ctx)
+	defFilter, err := m.defaultFilter(ctx, m)
 	if err != nil {
 		return nil, err
 	}
