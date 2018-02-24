@@ -72,17 +72,17 @@ type BaseModel struct {
 	extModels        map[string]Relation
 	extModelsMtx     sync.RWMutex
 	storage          IStorage
-	addPermission    string
-	editPermission   string
-	deletePermission string
+	addPermission    *rbac.Permission
+	editPermission   *rbac.Permission
+	deletePermission *rbac.Permission
 	defaultFilter    DefaultFilterFunc
 }
 
 type BaseModelOpts struct {
 	PkFieldsNames    []string
-	AddPermission    string
-	EditPermission   string
-	DeletePermission string
+	AddPermission    *rbac.Permission
+	EditPermission   *rbac.Permission
+	DeletePermission *rbac.Permission
 	DefaultFilter    DefaultFilterFunc
 }
 
@@ -222,7 +222,7 @@ func (m *BaseModel) AddMulti(ctx context.Context, data *Data, opts AddOptions) (
 	ctx = timelog.Start(ctx, m.GetId()+": AddMulti")
 	defer timelog.Finish(ctx)
 
-	if m.addPermission != "" && !rbac.HasPermission(ctx, m.addPermission) {
+	if m.addPermission != nil && !rbac.HasPermission(ctx, m.addPermission) {
 		return nil, AddErrorf("You don't have permission")
 	}
 
@@ -604,7 +604,7 @@ func (m *BaseModel) Edit(ctx context.Context, filter IExpression, newValues map[
 	ctx = timelog.Start(ctx, m.GetId()+": Edit")
 	defer timelog.Finish(ctx)
 
-	if m.editPermission != "" && !rbac.HasPermission(ctx, m.editPermission) {
+	if m.editPermission != nil && !rbac.HasPermission(ctx, m.editPermission) {
 		return EditErrorf("You don't have permission")
 	}
 
@@ -626,7 +626,7 @@ func (m *BaseModel) Delete(ctx context.Context, filter IExpression) error {
 	ctx = timelog.Start(ctx, m.GetId()+": Delete")
 	defer timelog.Finish(ctx)
 
-	if m.deletePermission != "" && !rbac.HasPermission(ctx, m.deletePermission) {
+	if m.deletePermission != nil && !rbac.HasPermission(ctx, m.deletePermission) {
 		return DeleteErrorf("You don't have permission")
 	}
 
