@@ -786,6 +786,9 @@ func (m *BaseModel) getFieldsFromStruct(t reflect.Type) ([]string, error) {
 		field := t.Field(i)
 
 		fieldName := m.structFieldToFieldName(field)
+		if fieldName == "-" {
+			continue
+		}
 
 		switch field.Type.Kind() {
 		case reflect.Struct:
