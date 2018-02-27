@@ -913,5 +913,9 @@ func (m *BaseModel) withDefaultFilter(ctx context.Context, filter IExpression) (
 		return nil, err
 	}
 
+	if defFilter == nil {
+		return filter, nil
+	}
+
 	return exprAnd(filter, defFilter), nil
 }
