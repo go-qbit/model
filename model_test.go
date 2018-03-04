@@ -35,7 +35,7 @@ func (s *ModelTestSuite) SetupTest() {
 	s.message = test.NewMessage(s.storage)
 	s.address = test.NewAddress(s.storage)
 
-	relation.AddOneToOne(s.phone, s.user,)
+	relation.AddOneToOne(s.phone, s.user, )
 	relation.AddManyToOne(s.message, s.user)
 	relation.AddManyToMany(s.user, s.address, s.storage)
 
@@ -138,7 +138,7 @@ func (s *ModelTestSuite) TestModel_GetAll() {
 			// 1 to many
 			"message.text",
 			// many to many
-			"address.city", "address.address",
+			"address.city", "address.address", "address.stringid",
 		},
 		model.GetAllOptions{
 			Filter: expr.Lt(expr.ModelField(s.user, "id"), expr.Value(4)),
@@ -158,8 +158,8 @@ func (s *ModelTestSuite) TestModel_GetAll() {
 				{"text": "Message 3"},
 			},
 			"address": []map[string]interface{}{
-				{"city": "Arlington", "address": "1022 Bridges Dr"},
-				{"city": "Fort Worth", "address": "7105 Plover Circle"},
+				{"city": "Arlington", "address": "1022 Bridges Dr", "stringid": "100"},
+				{"city": "Fort Worth", "address": "7105 Plover Circle", "stringid": "200"},
 			},
 		},
 		{
@@ -170,8 +170,8 @@ func (s *ModelTestSuite) TestModel_GetAll() {
 				{"text": "Message 4"},
 			},
 			"address": []map[string]interface{}{
-				{"city": "Fort Worth", "address": "7105 Plover Circle"},
-				{"city": "Crowley", "address": "524 Pecan Street"},
+				{"city": "Fort Worth", "address": "7105 Plover Circle", "stringid": "200"},
+				{"city": "Crowley", "address": "524 Pecan Street", "stringid": "300"},
 			},
 		},
 		{
@@ -180,7 +180,7 @@ func (s *ModelTestSuite) TestModel_GetAll() {
 			"fullname": "James Bond",
 			"phone":    map[string]interface{}{"formated_number": "+3 (333) 3333333"},
 			"address": []map[string]interface{}{
-				{"city": "Crowley", "address": "524 Pecan Street"},
+				{"city": "Crowley", "address": "524 Pecan Street", "stringid": "300"},
 			},
 		},
 	}, data.Maps())

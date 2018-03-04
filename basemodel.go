@@ -64,42 +64,46 @@ type ModelLink struct {
 }
 
 type BaseModel struct {
-	id               string
-	fields           []IFieldDefinition
-	fieldsMtx        sync.RWMutex
-	nameToField      map[string]IFieldDefinition
-	pkFieldsNames    []string
-	extModels        map[string]Relation
-	extModelsMtx     sync.RWMutex
-	storage          IStorage
-	addPermission    *rbac.Permission
-	editPermission   *rbac.Permission
-	deletePermission *rbac.Permission
-	defaultFilter    DefaultFilterFunc
+	id                        string
+	fields                    []IFieldDefinition
+	fieldsMtx                 sync.RWMutex
+	nameToField               map[string]IFieldDefinition
+	pkFieldsNames             []string
+	extModels                 map[string]Relation
+	extModelsMtx              sync.RWMutex
+	storage                   IStorage
+	addPermission             *rbac.Permission
+	editPermission            *rbac.Permission
+	deletePermission          *rbac.Permission
+	defaultFilter             DefaultFilterFunc
+	prepareDerivableFieldsCtx PrepareDerivableFieldsCtxFunc
 }
 
 type BaseModelOpts struct {
-	PkFieldsNames    []string
-	AddPermission    *rbac.Permission
-	EditPermission   *rbac.Permission
-	DeletePermission *rbac.Permission
-	DefaultFilter    DefaultFilterFunc
+	PkFieldsNames             []string
+	AddPermission             *rbac.Permission
+	EditPermission            *rbac.Permission
+	DeletePermission          *rbac.Permission
+	DefaultFilter             DefaultFilterFunc
+	PrepareDerivableFieldsCtx PrepareDerivableFieldsCtxFunc
 }
 
-type DefaultFilterFunc func(context.Context, IModel) (IExpression, error)
+type DefaultFilterFunc func(ctx context.Context, m IModel) (IExpression, error)
+type PrepareDerivableFieldsCtxFunc func(ctx context.Context, m IModel, requestedFields map[string]struct{}, rows []map[string]interface{})
 
 func NewBaseModel(id string, fields []IFieldDefinition, storage IStorage, opts BaseModelOpts) *BaseModel {
 	m := &BaseModel{
-		id:               id,
-		fields:           fields,
-		nameToField:      make(map[string]IFieldDefinition),
-		extModels:        make(map[string]Relation),
-		storage:          storage,
-		pkFieldsNames:    opts.PkFieldsNames,
-		addPermission:    opts.AddPermission,
-		editPermission:   opts.AddPermission,
-		deletePermission: opts.DeletePermission,
-		defaultFilter:    opts.DefaultFilter,
+		id:                        id,
+		fields:                    fields,
+		nameToField:               make(map[string]IFieldDefinition),
+		extModels:                 make(map[string]Relation),
+		storage:                   storage,
+		pkFieldsNames:             opts.PkFieldsNames,
+		addPermission:             opts.AddPermission,
+		editPermission:            opts.AddPermission,
+		deletePermission:          opts.DeletePermission,
+		defaultFilter:             opts.DefaultFilter,
+		prepareDerivableFieldsCtx: opts.PrepareDerivableFieldsCtx,
 	}
 
 	if err := storage.RegisterModel(m); err != nil {
@@ -265,11 +269,11 @@ func (m *BaseModel) AddMulti(ctx context.Context, data *Data, opts AddOptions) (
 			}
 
 			var err error
-			if row[i], err = field.Clean(row[i]); err != nil {
+			if row[i], err = field.Clean(ctx, row[i]); err != nil {
 				return nil, FieldErrorf(field.GetId(), "%s", err.Error())
 			}
 
-			if err := field.Check(row[i]); err != nil {
+			if err := field.Check(ctx, row[i]); err != nil {
 				return nil, FieldErrorf(field.GetId(), "%s", err.Error())
 			}
 		}
@@ -510,6 +514,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 		extData[extModelName] = extValuesMap
 	}
 
+	// Fill external fields
 	for _, value := range values {
 		for extModelName, extModelData := range extData {
 			relation := m.extModels[extModelName]
@@ -535,15 +540,28 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 				value[extModelName] = extValues
 			}
 		}
+	}
 
-		for fieldName, _ := range needDerivableFieldsNames {
-			var err error
-			value[fieldName], err = m.nameToField[fieldName].Calc(value)
-			if err != nil {
-				return nil, err
-			}
+	// Fill derivable fields
+	if len(needDerivableFieldsNames) > 0 {
+		if m.prepareDerivableFieldsCtx != nil {
+			ctx = initDerivableFieldsCtx(ctx)
+			m.prepareDerivableFieldsCtx(ctx, m, needDerivableFieldsNames, values)
 		}
 
+		for _, value := range values {
+			for fieldName, _ := range needDerivableFieldsNames {
+				var err error
+				value[fieldName], err = m.nameToField[fieldName].Calc(ctx, value)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	// Clean unrequested fields
+	for _, value := range values {
 		for key, _ := range value {
 			_, isLocalField := requestedLocalFields[key]
 			_, isExtField := extFields[key]

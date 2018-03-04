@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/go-qbit/model"
+	"context"
 )
 
 type User struct {
@@ -34,7 +35,7 @@ func NewUser(storage model.IStorage) *User {
 					Id:        "fullname",
 					Caption:   "Full name",
 					DependsOn: []string{"name", "lastname"},
-					Get: func(row map[string]interface{}) (interface{}, error) {
+					Get: func(ctx context.Context, row map[string]interface{}) (interface{}, error) {
 						return row["name"].(string) + " " + row["lastname"].(string), nil
 					},
 				},
