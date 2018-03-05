@@ -48,7 +48,7 @@ func NewAddress(storage model.IStorage) *Address {
 			storage,
 			model.BaseModelOpts{
 				PkFieldsNames: []string{"id"},
-				PrepareDerivableFieldsCtx: func(ctx context.Context, m model.IModel, requestedFields map[string]struct{}, rows []map[string]interface{}) {
+				PrepareDerivableFieldsCtx: func(ctx context.Context, m model.IModel, requestedFields map[string]struct{}, rows []map[string]interface{}) error {
 					if _, exists := requestedFields["stringid"]; exists {
 						mapData := make(map[int]string)
 						for _, row := range rows {
@@ -56,6 +56,8 @@ func NewAddress(storage model.IStorage) *Address {
 						}
 						model.SetDerivableFieldsData(ctx, "mapdata", mapData)
 					}
+
+					return nil
 				},
 			},
 		),

@@ -89,7 +89,7 @@ type BaseModelOpts struct {
 }
 
 type DefaultFilterFunc func(ctx context.Context, m IModel) (IExpression, error)
-type PrepareDerivableFieldsCtxFunc func(ctx context.Context, m IModel, requestedFields map[string]struct{}, rows []map[string]interface{})
+type PrepareDerivableFieldsCtxFunc func(ctx context.Context, m IModel, requestedFields map[string]struct{}, rows []map[string]interface{}) error
 
 func NewBaseModel(id string, fields []IFieldDefinition, storage IStorage, opts BaseModelOpts) *BaseModel {
 	m := &BaseModel{
@@ -546,7 +546,9 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 	if len(needDerivableFieldsNames) > 0 {
 		if m.prepareDerivableFieldsCtx != nil {
 			ctx = initDerivableFieldsCtx(ctx)
-			m.prepareDerivableFieldsCtx(ctx, m, needDerivableFieldsNames, values)
+			if err := m.prepareDerivableFieldsCtx(ctx, m, needDerivableFieldsNames, values); err != nil {
+				return nil, err
+			}
 		}
 
 		for _, value := range values {

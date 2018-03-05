@@ -13,9 +13,9 @@ type IFieldDefinition interface {
 	IsDerivable() bool
 	IsRequired() bool
 	GetDependsOn() []string
-	Calc(context.Context, map[string]interface{}) (interface{}, error)
-	Check(context.Context, interface{}) error
-	Clean(context.Context, interface{}) (interface{}, error)
+	Calc(ctx context.Context, row map[string]interface{}) (interface{}, error)
+	Check(ctx context.Context, value interface{}) error
+	Clean(ctx context.Context, value interface{}) (interface{}, error)
 	CloneForFK(id string, caption string, required bool) IFieldDefinition
 }
 
@@ -24,6 +24,12 @@ type IFieldsDefinitions interface {
 	GetPKFieldsNames() []string
 	AddField(IFieldDefinition)
 }
+
+var (
+	_ IFieldDefinition = &IntField{}
+	_ IFieldDefinition = &StringField{}
+	_ IFieldDefinition = &DerivableField{}
+)
 
 type IntField struct {
 	Id        string
@@ -97,7 +103,7 @@ type DerivableField struct {
 	Id        string
 	Caption   string
 	DependsOn []string
-	Get       func(context.Context, map[string]interface{}) (interface{}, error)
+	Get       func(ctx context.Context, row map[string]interface{}) (interface{}, error)
 }
 
 func (f *DerivableField) GetId() string                                                             { return f.Id }
