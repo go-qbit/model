@@ -9,6 +9,7 @@ type IModel interface {
 	GetPKFieldsNames() []string
 	GetFieldsNames() []string
 	GetFieldDefinition(string) IFieldDefinition
+	GetSharedData(string) interface{}
 	FieldExpr(string) *exprModelFieldS
 	//AddField(IFieldDefinition)
 	AddRelation(Relation, string, []IFieldDefinition)

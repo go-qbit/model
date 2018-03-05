@@ -71,6 +71,7 @@ type BaseModel struct {
 	pkFieldsNames             []string
 	extModels                 map[string]Relation
 	extModelsMtx              sync.RWMutex
+	sharedData                map[string]interface{}
 	storage                   IStorage
 	addPermission             *rbac.Permission
 	editPermission            *rbac.Permission
@@ -81,6 +82,7 @@ type BaseModel struct {
 
 type BaseModelOpts struct {
 	PkFieldsNames             []string
+	SharedData                map[string]interface{}
 	AddPermission             *rbac.Permission
 	EditPermission            *rbac.Permission
 	DeletePermission          *rbac.Permission
@@ -99,6 +101,7 @@ func NewBaseModel(id string, fields []IFieldDefinition, storage IStorage, opts B
 		extModels:                 make(map[string]Relation),
 		storage:                   storage,
 		pkFieldsNames:             opts.PkFieldsNames,
+		sharedData:                opts.SharedData,
 		addPermission:             opts.AddPermission,
 		editPermission:            opts.AddPermission,
 		deletePermission:          opts.DeletePermission,
@@ -143,6 +146,14 @@ func (m *BaseModel) GetFieldDefinition(name string) IFieldDefinition {
 	defer m.fieldsMtx.RUnlock()
 
 	return m.nameToField[name]
+}
+
+func (m *BaseModel) GetSharedData(key string) interface{} {
+	if m.sharedData == nil {
+		return nil
+	}
+
+	return m.sharedData[key]
 }
 
 func (m *BaseModel) AddField(field IFieldDefinition) {
