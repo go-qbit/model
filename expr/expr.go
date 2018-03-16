@@ -66,14 +66,18 @@ func (e *ge) GetProcessor(processor model.IExpressionProcessor) interface{} {
 
 // In
 type in struct {
-	op     model.IExpression
-	values []model.IExpression
+	op        model.IExpression
+	valuesMap map[model.IExpression]struct{}
 }
 
-func In(op model.IExpression) *in         { return &in{op, nil} }
-func (e *in) Add(value model.IExpression) { e.values = append(e.values, value) }
+func In(op model.IExpression) *in         { return &in{op, make(map[model.IExpression]struct{})} }
+func (e *in) Add(value model.IExpression) { e.valuesMap[value] = struct{}{} }
 func (e *in) GetProcessor(processor model.IExpressionProcessor) interface{} {
-	return processor.In(e.op, e.values)
+	values := make([]model.IExpression, 0, len(e.valuesMap))
+	for v := range e.valuesMap {
+		values = append(values, v)
+	}
+	return processor.In(e.op, values)
 }
 
 // And
