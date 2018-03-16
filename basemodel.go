@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-qbit/qerror"
 	"github.com/go-qbit/rbac"
@@ -823,6 +824,11 @@ func (m *BaseModel) getFieldsFromStruct(t reflect.Type) ([]string, error) {
 
 		switch field.Type.Kind() {
 		case reflect.Struct:
+			if field.Type.PkgPath() == "time" {
+				// no need to inspect internal fields and store them as external table field relation
+				res = append(res, fieldName)
+				break
+			}
 			extFields, err := m.getFieldsFromStruct(field.Type)
 			if err != nil {
 				return nil, err
@@ -874,6 +880,18 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 		s.Set(newVar)
 
 	case reflect.Struct:
+		if s.Type().PkgPath() == "time" {
+			str := v.(*string)
+			if str == nil || *str != "0000-00-00 00:00:00" {
+				break
+			}
+			t, err := time.Parse("2006-01-02 15:04:05", *str)
+			if err != nil {
+				return err
+			}
+			s.Set(reflect.ValueOf(t))
+			break
+		}
 		vMap, ok := v.(map[string]interface{})
 		if !ok {
 			return qerror.Errorf("Invalid type %T for converting to structure", v)
