@@ -104,7 +104,7 @@ func NewBaseModel(id string, fields []IFieldDefinition, storage IStorage, opts B
 		pkFieldsNames:             opts.PkFieldsNames,
 		sharedData:                opts.SharedData,
 		addPermission:             opts.AddPermission,
-		editPermission:            opts.AddPermission,
+		editPermission:            opts.EditPermission,
 		deletePermission:          opts.DeletePermission,
 		defaultFilter:             opts.DefaultFilter,
 		prepareDerivableFieldsCtx: opts.PrepareDerivableFieldsCtx,
