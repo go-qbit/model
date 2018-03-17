@@ -380,6 +380,10 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 				return nil, qerror.Errorf("Unknown field '%s' in model '%s'", fieldName, m.id)
 			}
 
+			if perm := field.GetViewPermission(); perm != nil && !rbac.HasPermission(ctx, perm) {
+				continue
+			}
+
 			if field.IsDerivable() {
 				needDerivableFieldsNames[fieldName] = struct{}{}
 				dependencies, err := m.GetAllFieldDependencies(fieldName)
@@ -648,8 +652,14 @@ func (m *BaseModel) Edit(ctx context.Context, filter IExpression, newValues map[
 	}
 
 	for name := range newValues {
-		if m.GetFieldDefinition(name) == nil {
+		field := m.GetFieldDefinition(name)
+		if field == nil {
 			return qerror.Errorf("Unknown field '%s' in model '%s'", name, m.id)
+		}
+
+		if perm := field.GetEditPermission(); perm != nil && !rbac.HasPermission(ctx, perm) {
+			return qerror.Errorf("Need permission '%s' to edit field '%s' in model '%s'",
+				perm.GetGroupId()+"."+perm.GetId(), name, m.id)
 		}
 	}
 
