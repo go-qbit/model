@@ -892,7 +892,7 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 	case reflect.Struct:
 		if s.Type().PkgPath() == "time" {
 			str := v.(*string)
-			if str == nil || *str != "0000-00-00 00:00:00" {
+			if str == nil || *str == "0000-00-00 00:00:00" {
 				break
 			}
 			t, err := time.Parse("2006-01-02 15:04:05", *str)
