@@ -813,7 +813,7 @@ func (m *BaseModel) FieldsToString(fieldsNames []string, row map[string]interfac
 
 func (m *BaseModel) FieldExpr(name string) *exprModelFieldS {
 	if m.GetFieldDefinition(name) == nil {
-		return nil
+		panic(fmt.Sprintf("Unknown field %s in model %s", name, m.id))
 	}
 	return &exprModelFieldS{m, name}
 }
