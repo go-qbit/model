@@ -157,6 +157,14 @@ func (m *BaseModel) GetSharedData(key string) interface{} {
 	return m.sharedData[key]
 }
 
+func (m *BaseModel) GetDefaultFilter(ctx context.Context) (IExpression, error) {
+	if m.defaultFilter == nil {
+		return nil, nil
+	}
+
+	return m.defaultFilter(ctx, m)
+}
+
 func (m *BaseModel) AddField(field IFieldDefinition) {
 	m.fieldsMtx.Lock()
 	defer m.fieldsMtx.Unlock()

@@ -9,6 +9,7 @@ type IModel interface {
 	GetPKFieldsNames() []string
 	GetFieldsNames() []string
 	GetFieldDefinition(string) IFieldDefinition
+	GetDefaultFilter(context.Context) (IExpression, error)
 	GetSharedData(string) interface{}
 	FieldExpr(string) *exprModelFieldS
 	//AddField(IFieldDefinition)
@@ -79,7 +80,7 @@ type Relation struct {
 type RelationType int
 
 const (
-	RELATION_ONE_TO_ONE   RelationType = iota
+	RELATION_ONE_TO_ONE RelationType = iota
 	RELATION_ONE_TO_MANY
 	RELATION_MANY_TO_ONE
 	RELATION_MANY_TO_MANY
