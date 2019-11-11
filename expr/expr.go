@@ -139,3 +139,14 @@ func Value(v interface{}) *value { return &value{v} }
 func (e *value) GetProcessor(processor model.IExpressionProcessor) interface{} {
 	return processor.Value(e.data)
 }
+
+// Func
+type function struct {
+	name   string
+	params []model.IExpression
+}
+
+func Func(name string, params ...model.IExpression) *function { return &function{name, params} }
+func (e *function) GetProcessor(processor model.IExpressionProcessor) interface{} {
+	return processor.Func(e.name, e.params...)
+}

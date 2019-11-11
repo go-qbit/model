@@ -44,6 +44,7 @@ type IExpressionProcessor interface {
 	Any(localModel, extModel IModel, filter IExpression) interface{}
 	ModelField(model IModel, fieldName string) interface{}
 	Value(value interface{}) interface{}
+	Func(name string, params ...IExpression) interface{}
 }
 
 type AddOptions struct {

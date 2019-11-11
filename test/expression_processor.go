@@ -136,7 +136,6 @@ func (p *ExprProcessor) Or(operands []model.IExpression) interface{} {
 func (p *ExprProcessor) Any(localModel, extModel model.IModel, filter model.IExpression) interface{} {
 	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		panic("Not implemented")
-		return nil, nil
 	})
 }
 
@@ -149,5 +148,11 @@ func (p *ExprProcessor) ModelField(m model.IModel, fieldName string) interface{}
 func (p *ExprProcessor) Value(value interface{}) interface{} {
 	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
 		return value, nil
+	})
+}
+
+func (p *ExprProcessor) Func(name string, params ...model.IExpression) interface{} {
+	return EvalFunc(func(row model.IModelRow) (interface{}, error) {
+		panic("Not implemented")
 	})
 }
