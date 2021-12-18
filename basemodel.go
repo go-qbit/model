@@ -210,10 +210,10 @@ func (m *BaseModel) AddRelation(relation Relation, alias string, newFields []IFi
 	m.extModelsMtx.Lock()
 	defer m.extModelsMtx.Unlock()
 
-	if alias == "" {
-		alias = relation.ExtModel.GetId()
+	if alias != "" {
+		m.extModels[alias] = relation
 	}
-	m.extModels[alias] = relation
+	m.extModels[relation.ExtModel.GetId()] = relation // Ugly fix for any filter with alias relation
 }
 
 func (m *BaseModel) GetRelations() []string {
