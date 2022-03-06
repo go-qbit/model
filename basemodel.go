@@ -214,6 +214,10 @@ func (m *BaseModel) AddRelation(relation Relation, alias string, newFields []IFi
 		m.extModels[alias] = relation
 	}
 	m.extModels[relation.ExtModel.GetId()] = relation // Ugly fix for any filter with alias relation
+
+	if relation.PkFieldsNames != nil {
+		m.pkFieldsNames = relation.PkFieldsNames
+	}
 }
 
 func (m *BaseModel) GetRelations() []string {

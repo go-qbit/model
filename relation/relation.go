@@ -120,6 +120,7 @@ func AddManyToMany(model1, model2 model.IModel, storage model.IStorage, opts ...
 	model1.AddRelation(model.Relation{
 		ExtModel:                 model2,
 		RelationType:             model.RELATION_MANY_TO_MANY,
+		IsRequired:               true,
 		LocalFieldsNames:         model1.GetPKFieldsNames(),
 		FkFieldsNames:            model2.GetPKFieldsNames(),
 		JunctionModel:            junctionModel,
@@ -130,6 +131,7 @@ func AddManyToMany(model1, model2 model.IModel, storage model.IStorage, opts ...
 	model2.AddRelation(model.Relation{
 		ExtModel:                 model1,
 		RelationType:             model.RELATION_MANY_TO_MANY,
+		IsRequired:               true,
 		LocalFieldsNames:         model2.GetPKFieldsNames(),
 		FkFieldsNames:            model1.GetPKFieldsNames(),
 		JunctionModel:            junctionModel,
@@ -141,6 +143,7 @@ func AddManyToMany(model1, model2 model.IModel, storage model.IStorage, opts ...
 	junctionModel.AddRelation(model.Relation{
 		ExtModel:         model1,
 		RelationType:     model.RELATION_MANY_TO_ONE,
+		IsRequired:       true,
 		LocalFieldsNames: fk1Fields,
 		FkFieldsNames:    model1.GetPKFieldsNames(),
 	}, "", nil)
@@ -148,6 +151,71 @@ func AddManyToMany(model1, model2 model.IModel, storage model.IStorage, opts ...
 	junctionModel.AddRelation(model.Relation{
 		ExtModel:         model2,
 		RelationType:     model.RELATION_MANY_TO_ONE,
+		IsRequired:       true,
+		LocalFieldsNames: fk2Fields,
+		FkFieldsNames:    model2.GetPKFieldsNames(),
+	}, "", nil)
+}
+
+func AddManyToManyUsingTable(model1, model2, junction model.IModel, opts ...relationOptsFunc) {
+	o := &relationOpts{}
+	for _, optFunc := range opts {
+		optFunc(o)
+	}
+
+	junctionPkFields := make([]string, 0, len(model1.GetPKFieldsNames())+len(model2.GetPKFieldsNames()))
+	junctionFields := make([]model.IFieldDefinition, 0, len(junctionPkFields))
+
+	fk1Fields := make([]string, len(model1.GetPKFieldsNames()))
+	for i, pkFieldName := range model1.GetPKFieldsNames() {
+		fk1Fields[i] = "fk_" + model1.GetId() + "_" + pkFieldName
+		junctionPkFields = append(junctionPkFields, fk1Fields[i])
+		junctionFields = append(junctionFields, model1.GetFieldDefinition(pkFieldName).CloneForFK(fk1Fields[i], "FK field", true))
+	}
+
+	fk2Fields := make([]string, len(model2.GetPKFieldsNames()))
+	for i, pkFieldName := range model2.GetPKFieldsNames() {
+		fk2Fields[i] = "fk_" + model2.GetId() + "_" + pkFieldName
+		junctionPkFields = append(junctionPkFields, fk2Fields[i])
+		junctionFields = append(junctionFields, model2.GetFieldDefinition(pkFieldName).CloneForFK(fk2Fields[i], "FK field", true))
+	}
+
+	//model1.AddRelation(model.Relation{
+	//	ExtModel:                 model2,
+	//	RelationType:             model.RELATION_MANY_TO_MANY,
+	//	IsRequired:               true,
+	//	LocalFieldsNames:         model1.GetPKFieldsNames(),
+	//	FkFieldsNames:            model2.GetPKFieldsNames(),
+	//	JunctionModel:            junction,
+	//	JunctionLocalFieldsNames: fk1Fields,
+	//	JunctionFkFieldsNames:    fk2Fields,
+	//}, "", nil)
+	//
+	//model2.AddRelation(model.Relation{
+	//	ExtModel:                 model1,
+	//	RelationType:             model.RELATION_MANY_TO_MANY,
+	//	IsRequired:               true,
+	//	LocalFieldsNames:         model2.GetPKFieldsNames(),
+	//	FkFieldsNames:            model1.GetPKFieldsNames(),
+	//	JunctionModel:            junction,
+	//	JunctionLocalFieldsNames: fk2Fields,
+	//	JunctionFkFieldsNames:    fk1Fields,
+	//	IsBack:                   true,
+	//}, "", nil)
+
+	junction.AddRelation(model.Relation{
+		ExtModel:         model1,
+		RelationType:     model.RELATION_MANY_TO_ONE,
+		IsRequired:       true,
+		PkFieldsNames:    junctionPkFields,
+		LocalFieldsNames: fk1Fields,
+		FkFieldsNames:    model1.GetPKFieldsNames(),
+	}, "", junctionFields)
+
+	junction.AddRelation(model.Relation{
+		ExtModel:         model2,
+		RelationType:     model.RELATION_MANY_TO_ONE,
+		IsRequired:       true,
 		LocalFieldsNames: fk2Fields,
 		FkFieldsNames:    model2.GetPKFieldsNames(),
 	}, "", nil)

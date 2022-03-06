@@ -70,6 +70,7 @@ type Relation struct {
 	ExtModel                 IModel
 	RelationType             RelationType
 	LocalFieldsNames         []string
+	PkFieldsNames            []string
 	FkFieldsNames            []string
 	JunctionModel            IModel
 	JunctionLocalFieldsNames []string
