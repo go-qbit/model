@@ -195,7 +195,7 @@ func (m *BaseModel) GetAllFieldDependencies(fieldName string) ([]string, error) 
 	}
 
 	res := make([]string, 0, len(resMap))
-	for name, _ := range resMap {
+	for name := range resMap {
 		res = append(res, name)
 	}
 
@@ -225,7 +225,7 @@ func (m *BaseModel) GetRelations() []string {
 	defer m.extModelsMtx.RUnlock()
 
 	res := make([]string, 0, len(m.extModels))
-	for name, _ := range m.extModels {
+	for name := range m.extModels {
 		res = append(res, name)
 	}
 
@@ -363,7 +363,9 @@ func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}, opts A
 		for j := 0; j < len(fieldsNames); j++ {
 			flatRow[j] = rData.Index(i).Field(fieldsNums[j]).Interface()
 		}
-		flatData.Add(flatRow)
+		if err := flatData.Add(flatRow); err != nil {
+			return nil, err
+		}
 	}
 
 	return m.AddMulti(ctx, flatData, opts)
@@ -417,7 +419,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 		}
 	}
 
-	for extModelName, _ := range extFields {
+	for extModelName := range extFields {
 		relation, exists := m.extModels[extModelName]
 		if !exists {
 			return nil, qerror.Errorf("There is no relation between '%s' and '%s'", m.GetId(), extModelName)
@@ -432,7 +434,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 	}
 
 	needLocalFieldsNamesArr := make([]string, 0, len(needLocalFields))
-	for fieldName, _ := range needLocalFields {
+	for fieldName := range needLocalFields {
 		if !m.nameToField[fieldName].IsDerivable() {
 			needLocalFieldsNamesArr = append(needLocalFieldsNamesArr, fieldName)
 		}
@@ -450,10 +452,10 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 	}
 
 	resFields := make([]string, 0, len(requestedLocalFields)+len(requestedExtFields))
-	for fieldName, _ := range requestedLocalFields {
+	for fieldName := range requestedLocalFields {
 		resFields = append(resFields, fieldName)
 	}
-	for fieldName, _ := range requestedExtFields {
+	for fieldName := range requestedExtFields {
 		resFields = append(resFields, fieldName)
 	}
 
@@ -553,8 +555,8 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 			}
 
 			// Delete unrequested external fields
-			for i, _ := range extValues {
-				for fieldName, _ := range extValues[i] {
+			for i := range extValues {
+				for fieldName := range extValues[i] {
 					if _, exists := requestedExtFields[extModelName][fieldName]; !exists {
 						delete(extValues[i], fieldName)
 					}
@@ -580,7 +582,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 		}
 
 		for _, value := range values {
-			for fieldName, _ := range needDerivableFieldsNames {
+			for fieldName := range needDerivableFieldsNames {
 				var err error
 				value[fieldName], err = m.nameToField[fieldName].Calc(ctx, value)
 				if err != nil {
@@ -592,7 +594,7 @@ func (m *BaseModel) GetAll(ctx context.Context, fieldsNames []string, opts GetAl
 
 	// Clean unrequested fields
 	for _, value := range values {
-		for key, _ := range value {
+		for key := range value {
 			_, isLocalField := requestedLocalFields[key]
 			_, isExtField := extFields[key]
 
@@ -898,7 +900,9 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 			return nil
 		}
 		newVar := reflect.New(s.Type().Elem())
-		m.mapToVar(v, newVar.Elem())
+		if err := m.mapToVar(v, newVar.Elem()); err != nil {
+			return err
+		}
 		s.Set(newVar)
 
 	case reflect.Struct:
@@ -943,7 +947,7 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 			s.Set(reflect.ValueOf(v).Elem())
 		case []map[string]interface{}:
 			newSlice := reflect.MakeSlice(s.Type(), len(v), len(v))
-			for i, _ := range v {
+			for i := range v {
 				if err := m.mapToVar(v[i], newSlice.Index(i)); err != nil {
 					return err
 				}
