@@ -919,7 +919,11 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 			if str == nil || *str == "0000-00-00 00:00:00" {
 				break
 			}
-			t, err := time.Parse("2006-01-02 15:04:05", *str)
+			layout := "2006-01-02 15:04:05"
+			if len(strings.Split(*str, " ")) == 1 {
+				layout = "2006-01-02"
+			}
+			t, err := time.Parse(layout, *str)
 			if err != nil {
 				return err
 			}
