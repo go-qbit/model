@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/go-qbit/qerror"
 	"github.com/go-qbit/rbac"
@@ -347,12 +348,10 @@ func (m *BaseModel) AddFromStructs(ctx context.Context, data interface{}, opts A
 	fieldsNames := make([]string, 0, rt.Elem().NumField())
 	fieldsNums := make([]int, 0, rt.Elem().NumField())
 	for i := 0; i < rt.Elem().NumField(); i++ {
-		if rt.Elem().Field(i).Tag.Get("field") == "-" {
-			continue
+		if fieldName := m.structFieldToFieldName(rt.Elem().Field(i)); fieldName != "-" {
+			fieldsNames = append(fieldsNames, fieldName)
+			fieldsNums = append(fieldsNums, i)
 		}
-
-		fieldsNames = append(fieldsNames, m.structFieldToFieldName(rt.Elem().Field(i)))
-		fieldsNums = append(fieldsNums, i)
 	}
 
 	rData := reflect.ValueOf(data)
@@ -977,6 +976,9 @@ func (m *BaseModel) mapToVar(v interface{}, s reflect.Value) error {
 func (m *BaseModel) structFieldToFieldName(field reflect.StructField) string {
 	fieldName, ok := field.Tag.Lookup("field")
 	if !ok {
+		if unicode.IsLower(rune(field.Name[0])) {
+			return "-"
+		}
 		fieldName = field.Name[0:1] + regexp.MustCompile("[A-Z]").ReplaceAllStringFunc(field.Name[1:], func(v string) string {
 			return "_" + v
 		})

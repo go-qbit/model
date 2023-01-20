@@ -5,11 +5,12 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/go-qbit/timelog"
+
 	"github.com/go-qbit/model"
 	"github.com/go-qbit/model/expr"
 	"github.com/go-qbit/model/relation"
 	"github.com/go-qbit/model/test"
-	"github.com/go-qbit/timelog"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -35,22 +36,23 @@ func (s *ModelTestSuite) SetupTest() {
 	s.message = test.NewMessage(s.storage)
 	s.address = test.NewAddress(s.storage)
 
-	relation.AddOneToOne(s.phone, s.user, )
+	relation.AddOneToOne(s.phone, s.user)
 	relation.AddManyToOne(s.message, s.user)
 	relation.AddManyToMany(s.user, s.address, s.storage)
 
 	_, err := s.user.AddFromStructs(context.Background(),
 		[]struct {
-			Id       int
-			Name     string
-			Dummy    string `field:"-"`
-			Lastname string
+			privateField int // Must be ignored
+			Id           int
+			Name         string
+			Dummy        string `field:"-"`
+			Lastname     string
 		}{
-			{1, "Ivan", "", "Sidorov"},
-			{2, "Petr", "", "Ivanov"},
-			{3, "James", "", "Bond"},
-			{4, "John", "", "Connor"},
-			{5, "Sara", "", "Connor"},
+			{0, 1, "Ivan", "", "Sidorov"},
+			{0, 2, "Petr", "", "Ivanov"},
+			{0, 3, "James", "", "Bond"},
+			{0, 4, "John", "", "Connor"},
+			{0, 5, "Sara", "", "Connor"},
 		}, model.AddOptions{},
 	)
 
@@ -201,13 +203,14 @@ func (s *ModelTestSuite) TestModel_GetAllToStruct() {
 	}
 
 	type UserType struct {
-		Id        int           `field:"id"`
-		Lastname  string        `field:"lastname"`
-		Fullname  string        `field:"fullname"`
-		Phone     PhoneType     `field:"phone"`
-		PhonePtr  *PhoneType    `field:"phone"`
-		Messages  []MessageType `field:"message"`
-		Addresses []AddressTYpe `field:"address"`
+		privateField int           // Must be ignored
+		Id           int           `field:"id"`
+		Lastname     string        `field:"lastname"`
+		Fullname     string        `field:"fullname"`
+		Phone        PhoneType     `field:"phone"`
+		PhonePtr     *PhoneType    `field:"phone"`
+		Messages     []MessageType `field:"message"`
+		Addresses    []AddressTYpe `field:"address"`
 	}
 
 	var res []UserType
