@@ -256,7 +256,7 @@ func (m *BaseModel) AddMulti(ctx context.Context, data *Data, opts AddOptions) (
 	}
 
 	if data.Len() == 0 {
-		return data, nil
+		return NewEmptyData(m.GetPKFieldsNames()), nil
 	}
 
 	fieldsMap := make(map[string]struct{})
